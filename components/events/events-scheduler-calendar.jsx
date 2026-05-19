@@ -5,6 +5,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import idLocale from "@fullcalendar/core/locales/id";
+import multiMonthPlugin from "@fullcalendar/multimonth";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
@@ -19,7 +20,24 @@ const calendarViews = [
   { value: "timeGridWeek", label: "Week" },
   { value: "timeGridThreeDay", label: "3 Days" },
   { value: "timeGridDay", label: "Day" },
-  { value: "listMonth", label: "Schedule" },
+  { value: "multiMonthYear", label: "Year" },
+  { value: "listYear", label: "Schedule" },
+];
+
+const contentTypes = [
+  { value: "ALL", label: "Semua format" },
+  { value: "VIDEO_SHORT", label: "Video Short" },
+  { value: "CAROUSEL_POST", label: "Carousel Post" },
+  { value: "BLOG", label: "Blog" },
+  { value: "LONG_VIDEO", label: "Long Video" },
+];
+
+const statusOptions = [
+  { value: "ALL", label: "Semua status" },
+  { value: "DRAFT", label: "Draft" },
+  { value: "SCHEDULED", label: "Scheduled" },
+  { value: "PUBLISHED", label: "Published" },
+  { value: "ARCHIVED", label: "Archived" },
 ];
 
 const typeClasses = {
@@ -33,9 +51,21 @@ export function EventsSchedulerCalendar() {
   const calendarRef = useRef(null);
   const [title, setTitle] = useState("");
   const [view, setView] = useState("dayGridMonth");
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [visibleRange, setVisibleRange] = useState(null);
   const [selectedRange, setSelectedRange] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const contentItems = trpc.contentItems.list.useQuery({ status: "SCHEDULED" });
+  const listInput = useMemo(
+    () => ({
+      type: typeFilter === "ALL" ? undefined : typeFilter,
+      status: statusFilter === "ALL" ? undefined : statusFilter,
+      from: visibleRange?.start,
+      to: visibleRange?.end,
+    }),
+    [statusFilter, typeFilter, visibleRange],
+  );
+  const contentItems = trpc.contentItems.list.useQuery(listInput);
   const updateMutation = trpc.contentItems.update.useMutation({
     onSuccess: () => contentItems.refetch(),
   });
@@ -106,9 +136,9 @@ export function EventsSchedulerCalendar() {
             <CardDescription>Calendar</CardDescription>
             <CardTitle className="capitalize">{title || "Events"}</CardTitle>
           </div>
-          <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <div className="flex flex-col gap-2 xl:items-end">
             <Tabs value={view} onValueChange={changeView}>
-              <TabsList className="grid grid-cols-5">
+              <TabsList className="flex h-auto flex-wrap justify-start gap-1">
                 {calendarViews.map((calendarView) => (
                   <TabsTrigger key={calendarView.value} value={calendarView.value}>
                     {calendarView.label}
@@ -116,26 +146,68 @@ export function EventsSchedulerCalendar() {
                 ))}
               </TabsList>
             </Tabs>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={() => moveCalendar("prev")} aria-label="Sebelumnya">
-                <ChevronLeft className="size-4" />
-              </Button>
-              <Button variant="outline" onClick={() => moveCalendar("today")}>
-                Hari ini
-              </Button>
-              <Button variant="outline" size="icon" onClick={() => moveCalendar("next")} aria-label="Berikutnya">
-                <ChevronRight className="size-4" />
-              </Button>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <select
+                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  value={typeFilter}
+                  onChange={(event) => setTypeFilter(event.target.value)}
+                  aria-label="Filter format konten"
+                >
+                  {contentTypes.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                  aria-label="Filter status konten"
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => moveCalendar("prev")} aria-label="Sebelumnya">
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <Button variant="outline" onClick={() => moveCalendar("today")}>
+                  Hari ini
+                </Button>
+                <Button variant="outline" size="icon" onClick={() => moveCalendar("next")} aria-label="Berikutnya">
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
         <CardContent>
+          {contentItems.error && (
+            <p className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-sm text-destructive">
+              {contentItems.error.message}
+            </p>
+          )}
+          {contentItems.isFetching && (
+            <p className="mb-3 text-sm text-muted-foreground">Memuat jadwal konten...</p>
+          )}
           <div className="events-calendar-shell">
             <FullCalendar
               ref={calendarRef}
               allDaySlot
               dateClick={handleDateClick}
-              datesSet={(info) => setTitle(info.view.title)}
+              datesSet={(info) => {
+                setTitle(info.view.title);
+                setVisibleRange({
+                  start: info.startStr,
+                  end: info.endStr,
+                });
+              }}
               editable
               eventClick={(info) => {
                 setSelectedRange(null);
@@ -152,7 +224,7 @@ export function EventsSchedulerCalendar() {
               initialView="dayGridMonth"
               locale={idLocale}
               nowIndicator
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, multiMonthPlugin]}
               select={(info) => openCreateDialog({ start: info.start, end: info.end, allDay: info.allDay })}
               selectable
               selectMirror

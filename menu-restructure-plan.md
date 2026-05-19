@@ -1127,6 +1127,23 @@ Contoh penerapan:
 
 ## Todo List Implementasi
 
+### Progress Terakhir - 2026-05-20
+
+Fokus sesi terakhir: menyelesaikan alur Events untuk MVP.
+
+- Events sudah tidak lagi memakai tampilan timeline produksi lama.
+- Halaman `/events` sekarang fokus pada scheduler calendar.
+- Calendar memakai FullCalendar dengan mode `Month`, `Week`, `3 Days`, `Day`, `Year`, dan `Schedule`.
+- Event sudah mendukung rentang waktu melalui `ContentItem.startAt`, `ContentItem.endAt`, `ContentItem.allDay`, dan `ContentItem.timezone`.
+- Klik tanggal/jam atau drag rentang kalender membuka modal tambah event.
+- Klik event membuka modal edit/delete.
+- Event bisa dipindah dan di-resize dari kalender, lalu tersimpan via tRPC.
+- Filter format konten dan status tersedia di header calendar.
+- Komponen Events lama yang sudah tidak dipakai sudah dibersihkan.
+- Migration terbaru: `prisma/migrations/20260519155816_add_content_item_event_range/`.
+
+Lanjut berikutnya yang disarankan: masuk ke Produk Dasar, dimulai dari CRUD product untuk e-book dan course, lalu upload/viewer file.
+
 ### 0. Architecture Guardrails
 
 - [x] Setup tRPC gateway di `app/api/trpc/[trpc]/route.ts`.
@@ -1213,14 +1230,20 @@ Contoh penerapan:
 - [x] Tambahkan tipe konten `LONG_VIDEO`.
 - [x] Tambahkan status `DRAFT`, `SCHEDULED`, `PUBLISHED`, `ARCHIVED`.
 - [x] Tambahkan field tanggal publish/schedule.
+- [x] Tambahkan field event range `startAt`, `endAt`, `allDay`, dan `timezone`.
 - [x] Buat list konten per format.
 - [x] Buat search dan filter status.
 - [x] Buat tampilan Events list.
 - [x] Buat tampilan Events calendar month.
 - [x] Tambahkan modal tambah event dari klik tanggal.
 - [x] Tambahkan modal detail/edit event.
-- [ ] Tambahkan dukungan event multi-hari.
-- [ ] Tambahkan view week, year, dan list setelah month view stabil.
+- [x] Tambahkan dukungan event multi-hari.
+- [x] Tambahkan rentang jam untuk event time-grid.
+- [x] Tambahkan view week, year, dan list setelah month view stabil.
+- [x] Tambahkan view 3 days dan day.
+- [x] Tambahkan filter format dan status di calendar.
+- [x] Tambahkan drag-and-drop dan resize event.
+- [x] Bersihkan timeline produksi lama dari halaman Events.
 
 ### 5. Produk Dasar
 
