@@ -3,7 +3,10 @@ node_modules
 out
 dist
 build
+.env
 .env*.local
 .vercel
 *.log
 bun.lockb
+
+/prisma/dev.db*

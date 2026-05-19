@@ -1,4 +1,4 @@
-export const files = [
+const files = [
   {
     name: "Timeline",
     path: "/api/docs/channel",
@@ -26,7 +26,7 @@ export const files = [
   },
 ];
 
-export const cadence = {
+const cadence = {
   minimum: [
     ["IG carousel / post visual", "1x per minggu"],
     ["Video pendek", "1x per minggu"],
@@ -50,7 +50,7 @@ export const cadence = {
   ],
 };
 
-export const weeklyCalendar = [
+const weeklyCalendar = [
   ["Senin", "Pilih topik dan angle utama"],
   ["Selasa", "Publish IG carousel / post visual"],
   ["Rabu", "Produksi atau publish video pendek"],
@@ -59,7 +59,7 @@ export const weeklyCalendar = [
   ["Sabtu/Minggu", "Tulis atau lanjutkan blog/Medium"],
 ];
 
-export const timeline = [
+const timeline = [
   {
     week: 1,
     theme: "Positioning kanal",
@@ -170,7 +170,7 @@ export const timeline = [
   },
 ];
 
-export const topics = [
+const topics = [
   {
     id: "IDEA-001",
     cluster: "Core",
@@ -615,9 +615,18 @@ export const topics = [
   },
 ];
 
-export const formats = [
+const formats = [
   { key: "carousel", label: "Carousel" },
   { key: "short", label: "Video" },
   { key: "article", label: "Artikel" },
   { key: "linkedin", label: "LinkedIn" },
 ];
+
+module.exports = {
+  cadence,
+  files,
+  formats,
+  timeline,
+  topics,
+  weeklyCalendar,
+};

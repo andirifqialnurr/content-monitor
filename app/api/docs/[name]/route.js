@@ -11,7 +11,8 @@ const docs = {
 };
 
 export async function GET(_request, { params }) {
-  const name = docs[params.name];
+  const { name: docName } = await params;
+  const name = docs[docName];
 
   if (!name) {
     return new NextResponse("Document not found", { status: 404 });
