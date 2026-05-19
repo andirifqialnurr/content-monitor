@@ -6,6 +6,402 @@ datasource db {
   provider = "sqlite"
 }
 
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum ContentType {
+  VIDEO_SHORT
+  CAROUSEL_POST
+  BLOG
+  LONG_VIDEO
+}
+
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ProductType {
+  EBOOK
+  COURSE
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
+enum CourseLessonType {
+  READING
+  VIDEO
+}
+
+enum ResourceType {
+  TOOL
+  OFFICIAL_DOC
+  SOURCE
+  REPOSITORY
+  FILE
+}
+
+enum QuizQuestionType {
+  MULTIPLE_CHOICE
+  SHORT_ANSWER
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum BlockType {
+  LINK
+  PRODUCT
+  CONTENT
+  CTA
+}
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  LINK_CLICK
+  PRODUCT_CLICK
+  CHECKOUT_STARTED
+  PURCHASE_COMPLETED
+  COURSE_STARTED
+  LESSON_COMPLETED
+  QUIZ_SUBMITTED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  MIDTRANS
+  XENDIT
+}
+
+enum PaymentTransactionStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
+model User {
+  id                 String           @id @default(cuid())
+  name               String?
+  email              String           @unique
+  passwordHash       String?
+  role               UserRole         @default(USER)
+  username           String           @unique
+  avatarUrl          String?
+  bio                String?
+  timezone           String           @default("Asia/Jakarta")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  analyticsEvents    AnalyticsEvent[]
+  contentItems       ContentItem[]
+  createdEnrollments Enrollment[]     @relation("CreatorEnrollments")
+  createdOrders      Order[]          @relation("CreatedOrders")
+  learnerEnrollments Enrollment[]     @relation("LearnerEnrollments")
+  products           Product[]
+  publicPage         PublicPage?
+  boughtOrders       Order[]          @relation("BoughtOrders")
+}
+
+model ContentItem {
+  id           String            @id @default(cuid())
+  userId       String
+  type         ContentType
+  title        String
+  slug         String?
+  body         String?
+  metadataJson String?
+  status       ContentStatus     @default(DRAFT)
+  scheduledAt  DateTime?
+  startAt      DateTime?
+  endAt        DateTime?
+  allDay       Boolean           @default(false)
+  timezone     String            @default("Asia/Jakarta")
+  publishedAt  DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pageBlocks   PublicPageBlock[]
+
+  @@index([userId, type])
+  @@index([userId, status])
+  @@index([scheduledAt])
+  @@index([startAt])
+}
+
+model Product {
+  id              String            @id @default(cuid())
+  userId          String
+  type            ProductType
+  title           String
+  slug            String
+  description     String?
+  price           Int               @default(0)
+  currency        String            @default("IDR")
+  coverUrl        String?
+  fileUrl         String?
+  status          ProductStatus     @default(DRAFT)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  analyticsEvents AnalyticsEvent[]
+  enrollments     Enrollment[]
+  modules         CourseModule[]
+  orders          Order[]
+  pageBlocks      PublicPageBlock[]
+  quizzes         Quiz[]
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slug])
+  @@index([userId, type])
+  @@index([userId, status])
+}
+
+model CourseModule {
+  id        String         @id @default(cuid())
+  productId String
+  title     String
+  order     Int
+  lessons   CourseLesson[]
+  product   Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quizzes   Quiz[]
+
+  @@unique([productId, order])
+}
+
+model CourseLesson {
+  id         String           @id @default(cuid())
+  moduleId   String
+  title      String
+  type       CourseLessonType
+  body       String?
+  contentUrl String?
+  videoUrl   String?
+  duration   Int?
+  isPreview  Boolean          @default(false)
+  order      Int
+  module     CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progresses LessonProgress[]
+  quizzes    Quiz[]
+  resources  LessonResource[]
+
+  @@unique([moduleId, order])
+}
+
+model LessonResource {
+  id          String       @id @default(cuid())
+  lessonId    String
+  type        ResourceType
+  name        String
+  url         String?
+  description String?
+  order       Int
+  lesson      CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, order])
+}
+
+model Quiz {
+  id           String         @id @default(cuid())
+  productId    String?
+  moduleId     String?
+  lessonId     String?
+  title        String
+  passingScore Int            @default(0)
+  maxAttempts  Int?
+  order        Int            @default(0)
+  attempts     QuizAttempt[]
+  lesson       CourseLesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  module       CourseModule?  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  product      Product?       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  questions    QuizQuestion[]
+}
+
+model QuizQuestion {
+  id          String             @id @default(cuid())
+  quizId      String
+  type        QuizQuestionType
+  prompt      String
+  explanation String?
+  points      Int                @default(1)
+  order       Int
+  options     QuizAnswerOption[]
+  quiz        Quiz               @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, order])
+}
+
+model QuizAnswerOption {
+  id         String       @id @default(cuid())
+  questionId String
+  label      String
+  isCorrect  Boolean      @default(false)
+  order      Int
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, order])
+}
+
+model PublicPage {
+  id          String            @id @default(cuid())
+  userId      String            @unique
+  username    String            @unique
+  displayName String
+  bio         String?
+  themeJson   String?
+  isPublished Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  blocks      PublicPageBlock[]
+  events      AnalyticsEvent[]
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PublicPageBlock {
+  id            String           @id @default(cuid())
+  publicPageId  String
+  type          BlockType
+  title         String
+  url           String?
+  productId     String?
+  contentItemId String?
+  configJson    String?
+  order         Int
+  isVisible     Boolean          @default(true)
+  contentItem   ContentItem?     @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+  events        AnalyticsEvent[]
+  product       Product?         @relation(fields: [productId], references: [id], onDelete: SetNull)
+  publicPage    PublicPage       @relation(fields: [publicPageId], references: [id], onDelete: Cascade)
+
+  @@unique([publicPageId, order])
+}
+
+model AnalyticsEvent {
+  id           String           @id @default(cuid())
+  userId       String?
+  publicPageId String?
+  blockId      String?
+  productId    String?
+  type         AnalyticsEventType
+  metadataJson String?
+  visitorId    String?
+  ipHash       String?
+  createdAt    DateTime         @default(now())
+  block        PublicPageBlock? @relation(fields: [blockId], references: [id], onDelete: SetNull)
+  product      Product?         @relation(fields: [productId], references: [id], onDelete: SetNull)
+  publicPage   PublicPage?      @relation(fields: [publicPageId], references: [id], onDelete: SetNull)
+  user         User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, type])
+  @@index([createdAt])
+}
+
+model Order {
+  id           String               @id @default(cuid())
+  creatorUserId String
+  buyerUserId   String?
+  productId     String
+  buyerEmail    String
+  buyerName     String?
+  amount        Int
+  currency      String              @default("IDR")
+  status        OrderStatus         @default(PENDING)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  buyer         User?               @relation("BoughtOrders", fields: [buyerUserId], references: [id], onDelete: SetNull)
+  creator       User                @relation("CreatedOrders", fields: [creatorUserId], references: [id], onDelete: Cascade)
+  enrollment    Enrollment?
+  product       Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  transactions  PaymentTransaction[]
+
+  @@index([creatorUserId, status])
+  @@index([buyerUserId])
+}
+
+model PaymentTransaction {
+  id                String                   @id @default(cuid())
+  orderId           String
+  provider          PaymentProvider
+  providerReference String?
+  status            PaymentTransactionStatus @default(PENDING)
+  rawPayloadJson    String?
+  createdAt         DateTime                 @default(now())
+  order             Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([provider, providerReference])
+}
+
+model Enrollment {
+  id            String           @id @default(cuid())
+  learnerUserId String
+  creatorUserId String
+  productId     String
+  orderId       String?          @unique
+  status        EnrollmentStatus @default(ACTIVE)
+  startedAt     DateTime         @default(now())
+  completedAt   DateTime?
+  creator       User             @relation("CreatorEnrollments", fields: [creatorUserId], references: [id], onDelete: Cascade)
+  learner       User             @relation("LearnerEnrollments", fields: [learnerUserId], references: [id], onDelete: Cascade)
+  order         Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  product       Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  progress      LessonProgress[]
+  quizAttempts  QuizAttempt[]
+
+  @@unique([learnerUserId, productId])
+  @@index([creatorUserId])
+}
+
+model LessonProgress {
+  id           String         @id @default(cuid())
+  enrollmentId String
+  lessonId     String
+  status       ProgressStatus @default(NOT_STARTED)
+  startedAt    DateTime?
+  completedAt  DateTime?
+  enrollment   Enrollment     @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson       CourseLesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+}
+
+model QuizAttempt {
+  id           String     @id @default(cuid())
+  enrollmentId String
+  quizId       String
+  score        Int?
+  passed       Boolean    @default(false)
+  answersJson  String?
+  startedAt    DateTime   @default(now())
+  submittedAt  DateTime?
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  quiz         Quiz       @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([enrollmentId, quizId])
+}
+
 model ReferenceFile {
   id          Int    @id @default(autoincrement())
   name        String

@@ -1,5 +1,6 @@
 require("dotenv/config");
 
+const { randomBytes, scryptSync } = require("node:crypto");
 const { PrismaClient } = require("@prisma/client");
 const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
 const { cadence, files, formats, timeline, topics, weeklyCalendar } = require("../data/content");
@@ -13,7 +14,19 @@ if (!databaseUrl) {
 const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
 const prisma = new PrismaClient({ adapter });
 
+function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const derivedKey = scryptSync(password, salt, 64);
+
+  return `scrypt$${salt}$${derivedKey.toString("hex")}`;
+}
+
 async function main() {
+  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@content-monitor.local";
+  const adminPassword = process.env.ADMIN_PASSWORD ?? "AdminPassword123!";
+  const adminUsername = process.env.ADMIN_USERNAME ?? "admin";
+  const adminName = process.env.ADMIN_NAME ?? "Platform Admin";
+
   await prisma.$transaction(async (tx) => {
     await tx.timelineWeek.deleteMany();
     await tx.topicFolder.deleteMany();
@@ -76,12 +89,29 @@ async function main() {
     }
 
     await tx.timelineWeek.createMany({ data: timeline });
+
+    await tx.user.upsert({
+      where: { email: adminEmail },
+      update: {
+        name: adminName,
+        role: "ADMIN",
+        username: adminUsername,
+      },
+      create: {
+        name: adminName,
+        email: adminEmail,
+        username: adminUsername,
+        role: "ADMIN",
+        passwordHash: hashPassword(adminPassword),
+      },
+    });
   });
 }
 
 main()
   .then(async () => {
     console.log("Seeded content monitor data.");
+    console.log("Admin login:", process.env.ADMIN_EMAIL ?? "admin@content-monitor.local");
     await prisma.$disconnect();
   })
   .catch(async (error) => {
