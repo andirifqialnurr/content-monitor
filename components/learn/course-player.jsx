@@ -16,6 +16,12 @@ export function CoursePlayer({ courseSlug }) {
       await utils.learn.list.invalidate();
     },
   });
+  const submitQuizMutation = trpc.learn.submitQuiz.useMutation({
+    onSuccess: async () => {
+      await utils.learn.get.invalidate({ courseSlug });
+      await utils.learn.list.invalidate();
+    },
+  });
 
   if (course.isLoading) {
     return <p className="text-sm text-muted-foreground">Memuat course...</p>;
@@ -34,6 +40,14 @@ export function CoursePlayer({ courseSlug }) {
       courseSlug,
       lessonId,
       status: "COMPLETED",
+    });
+  }
+
+  function handleSubmitQuiz(quizId, answers) {
+    submitQuizMutation.mutate({
+      courseSlug,
+      quizId,
+      answers,
     });
   }
 
@@ -59,13 +73,21 @@ export function CoursePlayer({ courseSlug }) {
           {updateProgressMutation.error.message}
         </p>
       )}
+      {submitQuizMutation.error && (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-sm text-destructive">
+          {submitQuizMutation.error.message}
+        </p>
+      )}
 
       <CoursePreview
         product={product}
         mode="learner"
         progressByLessonId={progressByLessonId}
+        quizAttempts={enrollment.quizAttempts}
         onMarkComplete={handleMarkComplete}
+        onSubmitQuiz={handleSubmitQuiz}
         isProgressPending={updateProgressMutation.isPending}
+        isQuizPending={submitQuizMutation.isPending}
       />
     </div>
   );

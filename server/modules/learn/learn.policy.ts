@@ -51,3 +51,32 @@ export function assertLessonBelongsToEnrollment(enrollment: EnrollmentWithLesson
 
   return lesson;
 }
+
+type QuizWithCourseScope = {
+  productId: string | null;
+  module: { productId: string } | null;
+  lesson: { module: { productId: string } } | null;
+};
+
+export function assertQuizBelongsToEnrollment<TQuiz extends QuizWithCourseScope>(
+  enrollment: Enrollment,
+  quiz: TQuiz | null,
+) {
+  if (!quiz) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Quiz tidak ditemukan.",
+    });
+  }
+
+  const quizProductId = quiz.productId ?? quiz.module?.productId ?? quiz.lesson?.module.productId;
+
+  if (!quizProductId || quizProductId !== enrollment.productId) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Quiz tidak termasuk dalam enrollment course ini.",
+    });
+  }
+
+  return quiz;
+}

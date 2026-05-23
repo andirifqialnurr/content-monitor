@@ -11,6 +11,14 @@ type UpsertLessonProgressParams = {
   status: ProgressStatus;
 };
 
+type CreateQuizAttemptParams = {
+  enrollmentId: string;
+  quizId: string;
+  score: number;
+  passed: boolean;
+  answersJson: string;
+};
+
 const learnerCourseInclude = {
   product: {
     include: {
@@ -63,6 +71,9 @@ const learnerCourseInclude = {
     },
   },
   progress: true,
+  quizAttempts: {
+    orderBy: { startedAt: "desc" },
+  },
 } satisfies Prisma.EnrollmentInclude;
 
 export function listLearnerCourses(prisma: PrismaClient, learnerUserId: string) {
@@ -113,6 +124,58 @@ export function upsertLessonProgress(prisma: PrismaClient, params: UpsertLessonP
     update: {
       status: params.status,
       ...progressDates,
+    },
+  });
+}
+
+export function findQuizById(prisma: PrismaClient, quizId: string) {
+  return prisma.quiz.findUnique({
+    where: { id: quizId },
+    include: {
+      product: true,
+      module: {
+        include: {
+          product: true,
+        },
+      },
+      lesson: {
+        include: {
+          module: {
+            include: {
+              product: true,
+            },
+          },
+        },
+      },
+      questions: {
+        orderBy: { order: "asc" },
+        include: {
+          options: { orderBy: { order: "asc" } },
+        },
+      },
+    },
+  });
+}
+
+export function countSubmittedQuizAttempts(prisma: PrismaClient, enrollmentId: string, quizId: string) {
+  return prisma.quizAttempt.count({
+    where: {
+      enrollmentId,
+      quizId,
+      submittedAt: { not: null },
+    },
+  });
+}
+
+export function createQuizAttempt(prisma: PrismaClient, params: CreateQuizAttemptParams) {
+  return prisma.quizAttempt.create({
+    data: {
+      enrollmentId: params.enrollmentId,
+      quizId: params.quizId,
+      score: params.score,
+      passed: params.passed,
+      answersJson: params.answersJson,
+      submittedAt: new Date(),
     },
   });
 }

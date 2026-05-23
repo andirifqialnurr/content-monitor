@@ -1161,8 +1161,9 @@ Fokus sesi terakhir: memverifikasi Produk Dasar yang belum di-commit dan mulai C
 
 - Preview course sebagai creator sudah tersedia dari detail internal course.
 - Learner area dasar sudah menampilkan enrollment course, course player, sidebar module/lesson, viewer bacaan/video, resource lesson, dan simpan progress lesson.
+- Quiz attempt learner sudah bisa submit jawaban, menghitung skor, menyimpan attempt, dan menandai lulus/belum lulus berdasarkan passing score.
 
-Lanjut berikutnya yang disarankan: lengkapi quiz attempt learner, lalu lanjutkan payment/enrollment otomatis agar akses course bisa dibuat dari checkout.
+Lanjut berikutnya yang disarankan: lanjutkan payment/enrollment otomatis agar akses course bisa dibuat dari checkout.
 
 ### 0. Architecture Guardrails
 
@@ -1341,9 +1342,9 @@ Lanjut berikutnya yang disarankan: lengkapi quiz attempt learner, lalu lanjutkan
 - [x] Tambahkan `LessonProgress`.
 - [x] Simpan progress lesson.
 - [x] Tambahkan `QuizAttempt`.
-- [ ] Buat flow mengerjakan quiz.
-- [ ] Hitung skor quiz.
-- [ ] Tandai quiz lulus/belum lulus.
+- [x] Buat flow mengerjakan quiz.
+- [x] Hitung skor quiz.
+- [x] Tandai quiz lulus/belum lulus.
 - [ ] Hitung completion course.
 
 ### 10. Statistics

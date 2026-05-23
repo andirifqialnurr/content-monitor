@@ -34,8 +34,11 @@ export function CoursePreview({
   product,
   mode = "creator",
   progressByLessonId = {},
+  quizAttempts = [],
   onMarkComplete,
+  onSubmitQuiz,
   isProgressPending = false,
+  isQuizPending = false,
 }) {
   const modules = product.modules ?? [];
   const lessons = useMemo(
@@ -201,7 +204,15 @@ export function CoursePreview({
         </Card>
 
         {selectedLesson && <LessonResources lesson={selectedLesson} />}
-        <QuizSummary product={product} module={selectedModule} lesson={selectedLesson} />
+        <QuizSummary
+          product={product}
+          module={selectedModule}
+          lesson={selectedLesson}
+          mode={mode}
+          quizAttempts={quizAttempts}
+          onSubmitQuiz={onSubmitQuiz}
+          isQuizPending={isQuizPending}
+        />
       </main>
     </div>
   );
@@ -318,12 +329,13 @@ function LessonResources({ lesson }) {
   );
 }
 
-function QuizSummary({ product, module, lesson }) {
+function QuizSummary({ product, module, lesson, mode, quizAttempts, onSubmitQuiz, isQuizPending }) {
   const quizzes = [
     ...(product.quizzes ?? []).map((quiz) => ({ ...quiz, scope: "Course" })),
     ...(module?.quizzes ?? []).map((quiz) => ({ ...quiz, scope: module.title })),
     ...(lesson?.quizzes ?? []).map((quiz) => ({ ...quiz, scope: lesson.title })),
   ];
+  const attemptsByQuizId = groupAttemptsByQuizId(quizAttempts);
 
   return (
     <Card>
@@ -338,29 +350,161 @@ function QuizSummary({ product, module, lesson }) {
         {quizzes.length === 0 ? (
           <p className="text-sm text-muted-foreground">Belum ada quiz untuk course/module/lesson ini.</p>
         ) : (
-          quizzes.map((quiz) => (
-            <article key={quiz.id} className="grid gap-2 rounded-md border bg-muted/20 p-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline">{quiz.scope}</Badge>
-                <h3 className="font-medium">{quiz.title}</h3>
-              </div>
-              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                <span>{quiz.questions?.length ?? 0} pertanyaan</span>
-                <span>Passing score {quiz.passingScore}</span>
-                <span>{quiz.maxAttempts ? `${quiz.maxAttempts} attempt` : "Attempt bebas"}</span>
-              </div>
-              {(quiz.questions ?? []).slice(0, 3).map((question) => (
-                <p key={question.id} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <HelpCircle className="mt-0.5 size-4 shrink-0" />
-                  <span>{question.prompt}</span>
-                </p>
-              ))}
-            </article>
-          ))
+          quizzes.map((quiz) =>
+            mode === "learner" ? (
+              <QuizAttemptCard
+                key={quiz.id}
+                quiz={quiz}
+                attempts={attemptsByQuizId[quiz.id] ?? []}
+                onSubmitQuiz={onSubmitQuiz}
+                isQuizPending={isQuizPending}
+              />
+            ) : (
+              <QuizPreviewCard key={quiz.id} quiz={quiz} />
+            ),
+          )
         )}
       </CardContent>
     </Card>
   );
+}
+
+function QuizPreviewCard({ quiz }) {
+  return (
+    <article className="grid gap-2 rounded-md border bg-muted/20 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="outline">{quiz.scope}</Badge>
+        <h3 className="font-medium">{quiz.title}</h3>
+      </div>
+      <QuizMeta quiz={quiz} attemptCount={0} />
+      {(quiz.questions ?? []).slice(0, 3).map((question) => (
+        <p key={question.id} className="flex items-start gap-2 text-sm text-muted-foreground">
+          <HelpCircle className="mt-0.5 size-4 shrink-0" />
+          <span>{question.prompt}</span>
+        </p>
+      ))}
+    </article>
+  );
+}
+
+function QuizAttemptCard({ quiz, attempts, onSubmitQuiz, isQuizPending }) {
+  const [answersByQuestionId, setAnswersByQuestionId] = useState({});
+  const [error, setError] = useState("");
+  const latestAttempt = attempts[0] ?? null;
+  const maxAttemptsReached = Boolean(quiz.maxAttempts && attempts.length >= quiz.maxAttempts);
+  const questions = quiz.questions ?? [];
+
+  function updateAnswer(questionId, answer) {
+    setAnswersByQuestionId((current) => ({
+      ...current,
+      [questionId]: { questionId, ...answer },
+    }));
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+
+    const missingQuestion = questions.find((question) => {
+      const answer = answersByQuestionId[question.id];
+
+      if (question.type === "MULTIPLE_CHOICE") {
+        return !answer?.optionId;
+      }
+
+      return !answer?.answerText?.trim();
+    });
+
+    if (missingQuestion) {
+      setError("Lengkapi semua jawaban sebelum submit quiz.");
+      return;
+    }
+
+    onSubmitQuiz?.(quiz.id, questions.map((question) => answersByQuestionId[question.id]));
+  }
+
+  return (
+    <form className="grid gap-4 rounded-md border bg-muted/20 p-3" onSubmit={handleSubmit}>
+      <div className="grid gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline">{quiz.scope}</Badge>
+          <h3 className="font-medium">{quiz.title}</h3>
+        </div>
+        <QuizMeta quiz={quiz} attemptCount={attempts.length} />
+        {latestAttempt && (
+          <div className="flex flex-wrap gap-2 text-sm">
+            <Badge variant={latestAttempt.passed ? "secondary" : "outline"}>
+              {latestAttempt.passed ? "Lulus" : "Belum lulus"}
+            </Badge>
+            <Badge variant="outline">Skor {latestAttempt.score ?? 0}</Badge>
+            <span className="text-muted-foreground">Submit {formatDateTime(latestAttempt.submittedAt ?? latestAttempt.startedAt)}</span>
+          </div>
+        )}
+      </div>
+
+      {questions.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Quiz belum memiliki pertanyaan.</p>
+      ) : (
+        <div className="grid gap-4">
+          {questions.map((question, index) => (
+            <fieldset key={question.id} className="grid gap-2 rounded-md border bg-background p-3">
+              <legend className="px-1 text-sm font-medium">
+                {index + 1}. {question.prompt}
+              </legend>
+              {question.type === "MULTIPLE_CHOICE" ? (
+                <div className="grid gap-2">
+                  {(question.options ?? []).map((option) => (
+                    <label key={option.id} className="flex items-start gap-2 text-sm">
+                      <input
+                        type="radio"
+                        name={`quiz-${quiz.id}-${question.id}`}
+                        className="mt-1 size-4"
+                        value={option.id}
+                        checked={answersByQuestionId[question.id]?.optionId === option.id}
+                        onChange={() => updateAnswer(question.id, { optionId: option.id })}
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <textarea
+                  className="min-h-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={answersByQuestionId[question.id]?.answerText ?? ""}
+                  onChange={(event) => updateAnswer(question.id, { answerText: event.target.value })}
+                />
+              )}
+            </fieldset>
+          ))}
+        </div>
+      )}
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      <Button type="submit" className="w-fit" disabled={isQuizPending || maxAttemptsReached || questions.length === 0}>
+        <ListChecks className="size-4" />
+        {maxAttemptsReached ? "Attempt habis" : "Submit quiz"}
+      </Button>
+    </form>
+  );
+}
+
+function QuizMeta({ quiz, attemptCount }) {
+  return (
+    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+      <span>{quiz.questions?.length ?? 0} pertanyaan</span>
+      <span>Passing score {quiz.passingScore}</span>
+      <span>{quiz.maxAttempts ? `${attemptCount}/${quiz.maxAttempts} attempt` : "Attempt bebas"}</span>
+    </div>
+  );
+}
+
+function groupAttemptsByQuizId(attempts) {
+  return attempts.reduce((groups, attempt) => {
+    groups[attempt.quizId] = groups[attempt.quizId] ?? [];
+    groups[attempt.quizId].push(attempt);
+    return groups;
+  }, {});
 }
 
 function getCourseQuizzes(product) {
@@ -383,6 +527,20 @@ function formatProgressStatus(status) {
   }
 
   return "Belum mulai";
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 function getEmbeddableVideoUrl(value) {
