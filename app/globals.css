@@ -109,4 +109,20 @@
   .events-calendar-shell .fc-list-event-dot {
     border-color: hsl(var(--primary));
   }
+
+  .events-calendar-shell .fc-list-event.event-type-video-short .fc-list-event-dot {
+    border-color: #0ea5e9;
+  }
+
+  .events-calendar-shell .fc-list-event.event-type-carousel-post .fc-list-event-dot {
+    border-color: #059669;
+  }
+
+  .events-calendar-shell .fc-list-event.event-type-blog .fc-list-event-dot {
+    border-color: #d97706;
+  }
+
+  .events-calendar-shell .fc-list-event.event-type-long-video .fc-list-event-dot {
+    border-color: #e11d48;
+  }
 }

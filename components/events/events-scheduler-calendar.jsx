@@ -8,7 +8,7 @@ import idLocale from "@fullcalendar/core/locales/id";
 import multiMonthPlugin from "@fullcalendar/multimonth";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -47,10 +47,15 @@ const typeClasses = {
   LONG_VIDEO: "event-type-long-video",
 };
 
+const defaultCalendarView = "dayGridMonth";
+const mobileCalendarView = "listYear";
+const mobileCalendarQuery = "(max-width: 767px)";
+const defaultTimezone = "Asia/Jakarta";
+
 export function EventsSchedulerCalendar() {
   const calendarRef = useRef(null);
   const [title, setTitle] = useState("");
-  const [view, setView] = useState("dayGridMonth");
+  const [view, setView] = useState(defaultCalendarView);
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [visibleRange, setVisibleRange] = useState(null);
@@ -70,6 +75,21 @@ export function EventsSchedulerCalendar() {
     onSuccess: () => contentItems.refetch(),
   });
   const events = useMemo(() => mapCalendarEvents(contentItems.data ?? []), [contentItems.data]);
+
+  useEffect(() => {
+    if (!window.matchMedia) {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(mobileCalendarQuery);
+
+    if (!mediaQuery.matches) {
+      return;
+    }
+
+    setView(mobileCalendarView);
+    calendarRef.current?.getApi()?.changeView(mobileCalendarView);
+  }, []);
 
   function getCalendarApi() {
     return calendarRef.current?.getApi();
@@ -221,7 +241,7 @@ export function EventsSchedulerCalendar() {
               firstDay={1}
               headerToolbar={false}
               height="auto"
-              initialView="dayGridMonth"
+              initialView={defaultCalendarView}
               locale={idLocale}
               nowIndicator
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, multiMonthPlugin]}
@@ -290,8 +310,12 @@ function toSchedulePayload(event) {
     startAt: event.start.toISOString(),
     endAt: endAt.toISOString(),
     allDay: event.allDay,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Asia/Jakarta",
+    timezone: event.extendedProps?.item?.timezone ?? getBrowserTimezone(),
   };
+}
+
+function getBrowserTimezone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone ?? defaultTimezone;
 }
 
 function getDefaultEndAt(start, allDay) {
