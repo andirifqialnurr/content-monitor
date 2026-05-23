@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Download, ExternalLink, FileText, Save, Upload } from "lucide-react";
+import { ArrowLeft, BookOpen, Download, ExternalLink, Eye, FileText, Save, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { CourseBuilder } from "@/components/courses/course-builder";
 import { Badge } from "@/components/ui/badge";
@@ -145,6 +145,14 @@ export function ProductDetail({ productId, expectedType }) {
                 <Badge variant="secondary">{formatPrice(data.price, data.currency)}</Badge>
                 <Badge variant="outline">{data._count.orders} order</Badge>
                 {data.type === "COURSE" && <Badge variant="outline">{data._count.modules} module</Badge>}
+                {data.type === "COURSE" && (
+                  <Button asChild variant="outline">
+                    <Link href={`/produk/course/${data.id}/preview`}>
+                      <Eye className="size-4" />
+                      Preview course
+                    </Link>
+                  </Button>
+                )}
               </div>
               {updateMutation.error && <p className="text-sm text-destructive">{updateMutation.error.message}</p>}
             </form>

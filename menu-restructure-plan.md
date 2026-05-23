@@ -1159,7 +1159,10 @@ Fokus sesi terakhir: memverifikasi Produk Dasar yang belum di-commit dan mulai C
 - Semua mutation Course Builder memakai validation schema Zod dan ownership check dari course owner.
 - Halaman detail internal `/produk/course/[product-id]` sekarang memuat Course Builder.
 
-Lanjut berikutnya yang disarankan: buat preview course sebagai creator, lalu lanjutkan ke learner area untuk viewer lesson bacaan/video.
+- Preview course sebagai creator sudah tersedia dari detail internal course.
+- Learner area dasar sudah menampilkan enrollment course, course player, sidebar module/lesson, viewer bacaan/video, resource lesson, dan simpan progress lesson.
+
+Lanjut berikutnya yang disarankan: lengkapi quiz attempt learner, lalu lanjutkan payment/enrollment otomatis agar akses course bisa dibuat dari checkout.
 
 ### 0. Architecture Guardrails
 
@@ -1180,7 +1183,7 @@ Lanjut berikutnya yang disarankan: buat preview course sebagai creator, lalu lan
 - [x] Tambahkan validation schema untuk setiap tRPC mutation yang sudah dibuat.
 - [ ] Tambahkan ownership check untuk setiap resource user.
 - [x] Tambahkan admin role guard.
-- [ ] Tambahkan enrollment guard untuk learner.
+- [x] Tambahkan enrollment guard untuk learner.
 - [ ] Siapkan abstraction untuk payment provider.
 - [x] Siapkan abstraction untuk private file storage.
 
@@ -1296,7 +1299,7 @@ Lanjut berikutnya yang disarankan: buat preview course sebagai creator, lalu lan
 - [x] Buat quiz pilihan ganda.
 - [x] Tambahkan passing score.
 - [x] Tambahkan max attempts.
-- [ ] Buat preview course sebagai creator.
+- [x] Buat preview course sebagai creator.
 
 ### 7. Appearance dan Public Page
 
@@ -1330,13 +1333,13 @@ Lanjut berikutnya yang disarankan: buat preview course sebagai creator, lalu lan
 
 - [x] Buat halaman `/learn`.
 - [x] Buat halaman `/learn/[course-slug]`.
-- [ ] Tampilkan daftar course yang dibeli.
-- [ ] Tampilkan sidebar module dan lesson.
-- [ ] Buat viewer lesson bacaan.
-- [ ] Buat viewer lesson video.
-- [ ] Tampilkan resource/tools/dokumentasi resmi per lesson.
+- [x] Tampilkan daftar course yang dibeli.
+- [x] Tampilkan sidebar module dan lesson.
+- [x] Buat viewer lesson bacaan.
+- [x] Buat viewer lesson video.
+- [x] Tampilkan resource/tools/dokumentasi resmi per lesson.
 - [x] Tambahkan `LessonProgress`.
-- [ ] Simpan progress lesson.
+- [x] Simpan progress lesson.
 - [x] Tambahkan `QuizAttempt`.
 - [ ] Buat flow mengerjakan quiz.
 - [ ] Hitung skor quiz.
