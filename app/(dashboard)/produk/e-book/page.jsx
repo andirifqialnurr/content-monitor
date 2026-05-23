@@ -1,12 +1,12 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { ProductManager } from "@/components/products/product-manager";
 
 export default function EBookPage() {
   return (
-    <ModulePlaceholder
+    <ProductManager
+      type="EBOOK"
       eyebrow="Produk"
       title="E-book"
       description="Produk file digital yang bisa diupload, dipreview, dijual, dan dibuka setelah order paid."
-      items={["Nama produk", "Deskripsi", "Harga", "Cover image", "Upload file e-book", "Preview/viewer", "Download setelah paid"]}
     />
   );
 }

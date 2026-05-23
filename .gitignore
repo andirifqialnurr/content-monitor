@@ -10,3 +10,4 @@ build
 bun.lockb
 
 /prisma/dev.db*
+/storage

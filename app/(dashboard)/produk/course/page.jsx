@@ -1,12 +1,12 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { ProductManager } from "@/components/products/product-manager";
 
 export default function CoursePage() {
   return (
-    <ModulePlaceholder
+    <ProductManager
+      type="COURSE"
       eyebrow="Produk"
       title="Course"
       description="Course builder untuk module, lesson bacaan/video, quiz, tools, dokumentasi resmi, dan resource pendukung."
-      items={["Module dan lesson", "Lesson bacaan", "Lesson video", "Quiz", "Tools", "Dokumentasi resmi", "Enrollment"]}
     />
   );
 }

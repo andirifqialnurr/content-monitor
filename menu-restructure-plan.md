@@ -1127,9 +1127,9 @@ Contoh penerapan:
 
 ## Todo List Implementasi
 
-### Progress Terakhir - 2026-05-20
+### Progress Terakhir - 2026-05-23
 
-Fokus sesi terakhir: menyelesaikan alur Events untuk MVP.
+Fokus sesi terakhir: memverifikasi Produk Dasar yang belum di-commit dan mulai Course Builder untuk module serta lesson.
 
 - Events sudah tidak lagi memakai tampilan timeline produksi lama.
 - Halaman `/events` sekarang fokus pada scheduler calendar.
@@ -1141,8 +1141,25 @@ Fokus sesi terakhir: menyelesaikan alur Events untuk MVP.
 - Filter format konten dan status tersedia di header calendar.
 - Komponen Events lama yang sudah tidak dipakai sudah dibersihkan.
 - Migration terbaru: `prisma/migrations/20260519155816_add_content_item_event_range/`.
+- Modul Produk Dasar sudah mulai diimplementasikan melalui tRPC router `products`.
+- CRUD produk dasar sudah tersedia untuk `EBOOK` dan `COURSE`: list, filter, create, update metadata/status, detail, dan delete dengan guard order.
+- Produk memakai validation schema Zod dan ownership check berbasis `ctx.user.id`.
+- Halaman `/produk/e-book` dan `/produk/course` sudah memakai `ProductManager`.
+- Halaman detail internal `/produk/e-book/[product-id]` dan `/produk/course/[product-id]` sudah tersedia.
+- Preview e-book sudah tersedia melalui `fileUrl` dengan iframe viewer.
+- Upload file e-book PDF sudah memakai private storage lokal di `storage/private`.
+- Endpoint `/api/products/[product-id]/ebook-file` sudah mendukung upload, preview inline, dan download.
+- Akses file e-book sudah dibatasi untuk owner produk atau buyer yang memiliki order `PAID`.
+- Catatan: payment/checkout belum membuat order `PAID` otomatis karena flow payment masih fase berikutnya.
+- Router tRPC `courses` sudah ditambahkan untuk Course Builder.
+- Course Builder sudah bisa tambah/update/hapus module course.
+- Course Builder sudah bisa tambah/update/hapus lesson course.
+- Lesson sudah memiliki editor materi bacaan sederhana berbasis textarea.
+- Lesson video sudah memiliki input video URL/embed URL dengan preview iframe untuk URL yang bisa di-embed.
+- Semua mutation Course Builder memakai validation schema Zod dan ownership check dari course owner.
+- Halaman detail internal `/produk/course/[product-id]` sekarang memuat Course Builder.
 
-Lanjut berikutnya yang disarankan: masuk ke Produk Dasar, dimulai dari CRUD product untuk e-book dan course, lalu upload/viewer file.
+Lanjut berikutnya yang disarankan: buat preview course sebagai creator, lalu lanjutkan ke learner area untuk viewer lesson bacaan/video.
 
 ### 0. Architecture Guardrails
 
@@ -1160,12 +1177,12 @@ Lanjut berikutnya yang disarankan: masuk ke Produk Dasar, dimulai dari CRUD prod
 - [x] Terapkan penamaan `domain.router.ts`, `domain.service.ts`, `domain.repository.ts`, `domain.schema.ts`, dan `domain.policy.ts`.
 - [x] Buat shared component variant system untuk komponen reusable.
 - [x] Pastikan page hanya menyusun komponen, bukan menampung UI besar.
-- [ ] Tambahkan validation schema untuk setiap tRPC mutation.
+- [x] Tambahkan validation schema untuk setiap tRPC mutation yang sudah dibuat.
 - [ ] Tambahkan ownership check untuk setiap resource user.
 - [x] Tambahkan admin role guard.
 - [ ] Tambahkan enrollment guard untuk learner.
 - [ ] Siapkan abstraction untuk payment provider.
-- [ ] Siapkan abstraction untuk private file storage.
+- [x] Siapkan abstraction untuk private file storage.
 
 ### 1. Struktur Route, Layout, dan Menu
 
@@ -1218,7 +1235,7 @@ Lanjut berikutnya yang disarankan: masuk ke Produk Dasar, dimulai dari CRUD prod
 - [x] Tambahkan `Product`.
 - [x] Tambahkan `PublicPage`.
 - [x] Tambahkan relasi `userId` untuk data milik user.
-- [ ] Pastikan query dashboard selalu filter berdasarkan `userId`.
+- [x] Pastikan query dashboard selalu filter berdasarkan `userId`.
 - [ ] Siapkan migrasi data lama dari `Topic` dan `TimelineWeek`.
 
 ### 4. Events dan Bank Konten Dasar
@@ -1247,16 +1264,16 @@ Lanjut berikutnya yang disarankan: masuk ke Produk Dasar, dimulai dari CRUD prod
 
 ### 5. Produk Dasar
 
-- [ ] Buat CRUD product.
+- [x] Buat CRUD product.
 - [x] Tambahkan tipe produk `EBOOK`.
 - [x] Tambahkan tipe produk `COURSE`.
 - [x] Tambahkan harga dan currency.
 - [x] Tambahkan status produk `DRAFT`, `ACTIVE`, `INACTIVE`.
 - [x] Tambahkan cover image.
-- [x] Tambahkan upload file e-book.
-- [ ] Tambahkan preview/viewer file e-book.
-- [ ] Siapkan akses download e-book untuk order paid.
-- [ ] Buat halaman detail produk internal.
+- [x] Tambahkan upload file e-book nyata/private storage.
+- [x] Tambahkan preview/viewer file e-book.
+- [x] Siapkan akses download e-book untuk order paid.
+- [x] Buat halaman detail produk internal.
 
 ### 6. Course Builder dan Quiz Authoring
 
@@ -1264,8 +1281,8 @@ Lanjut berikutnya yang disarankan: masuk ke Produk Dasar, dimulai dari CRUD prod
 - [x] Tambahkan `CourseLesson`.
 - [x] Tambahkan lesson type `READING`.
 - [x] Tambahkan lesson type `VIDEO`.
-- [ ] Buat editor materi bacaan.
-- [ ] Buat input video URL/embed.
+- [x] Buat editor materi bacaan.
+- [x] Buat input video URL/embed.
 - [x] Tambahkan upload file pendukung lesson.
 - [x] Tambahkan `LessonResource`.
 - [x] Tambahkan resource type `TOOL`.
@@ -1304,7 +1321,7 @@ Lanjut berikutnya yang disarankan: masuk ke Produk Dasar, dimulai dari CRUD prod
 - [x] Buat model `Order`.
 - [x] Buat model `PaymentTransaction`.
 - [ ] Update order status dari webhook.
-- [ ] Buka akses download e-book setelah order paid.
+- [x] Buka akses download e-book setelah order paid.
 - [x] Buat model `Enrollment`.
 - [ ] Buat enrollment otomatis untuk course setelah order paid.
 - [ ] Pastikan user tidak bisa membeli produk miliknya sendiri jika aturan ini dipilih.
