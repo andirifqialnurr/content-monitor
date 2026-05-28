@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { OrderStatus, PaymentTransactionStatus } from "@prisma/client";
+import type { OrderStatus, PaymentTransactionStatus, PlatformPaymentMode } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import type {
   PaymentCheckoutRequest,
@@ -24,8 +24,8 @@ type MidtransWebhookPayload = {
   signature_key?: unknown;
 };
 
-export function createMidtransProvider(): PaymentProviderAdapter {
-  const config = getMidtransConfig();
+export function createMidtransProvider(options: { paymentMode?: PlatformPaymentMode } = {}): PaymentProviderAdapter {
+  const config = getMidtransConfig(options.paymentMode);
 
   return {
     provider: "MIDTRANS",
@@ -135,7 +135,7 @@ function parseWebhook(serverKey: string, payload: unknown): PaymentWebhookEvent 
   };
 }
 
-function getMidtransConfig() {
+function getMidtransConfig(paymentMode?: PlatformPaymentMode) {
   const serverKey = process.env.MIDTRANS_SERVER_KEY;
 
   if (!serverKey) {
@@ -145,7 +145,7 @@ function getMidtransConfig() {
     });
   }
 
-  const isProduction = process.env.MIDTRANS_IS_PRODUCTION === "true";
+  const isProduction = paymentMode ? paymentMode === "PRODUCTION" : process.env.MIDTRANS_IS_PRODUCTION === "true";
 
   return {
     serverKey,

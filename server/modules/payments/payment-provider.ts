@@ -2,6 +2,7 @@ import type {
   OrderStatus,
   PaymentProvider,
   PaymentTransactionStatus,
+  PlatformPaymentMode,
 } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createMidtransProvider } from "@/server/modules/payments/midtrans-provider";
@@ -39,9 +40,16 @@ export type PaymentProviderAdapter = {
   parseWebhook(payload: unknown): PaymentWebhookEvent;
 };
 
-export function createPaymentProviderAdapter(provider: PaymentProvider = "MIDTRANS"): PaymentProviderAdapter {
+export type PaymentProviderAdapterOptions = {
+  paymentMode?: PlatformPaymentMode;
+};
+
+export function createPaymentProviderAdapter(
+  provider: PaymentProvider = "MIDTRANS",
+  options: PaymentProviderAdapterOptions = {},
+): PaymentProviderAdapter {
   if (provider === "MIDTRANS") {
-    return createMidtransProvider();
+    return createMidtransProvider(options);
   }
 
   throw new TRPCError({

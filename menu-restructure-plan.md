@@ -1185,8 +1185,12 @@ Fokus sesi terakhir: memverifikasi Produk Dasar yang belum di-commit dan mulai C
 - Admin bisa mengubah status user `ACTIVE/INACTIVE`; user inactive ditolak saat login dan saat session guard berikutnya.
 - Admin bisa mengubah moderation status produk/course `APPROVED/REVIEW_REQUIRED/DISABLED`; produk disabled tidak bisa dibuka publik atau checkout.
 - Aksi admin untuk status user dan product moderation sudah tercatat ke `AdminAuditLog` dan ditampilkan di admin overview.
+- Admin users/content/products/orders/payments sudah memiliki search dan filter via query string untuk investigasi list besar.
+- Admin settings `/admin/settings` sudah menjadi form konfigurasi global untuk payment provider/mode, platform fee, upload policy, dan feature flags.
+- Platform settings tersimpan di model `PlatformSettings`, mutation admin tercatat ke audit log, dan checkout publik mengikuti mode settings sebelum memanggil provider payment.
+- Admin statistics `/admin/statistics` sudah menampilkan metric platform, trend 30 hari, distribusi status, top products, dan top creators memakai ApexCharts.
 
-Lanjut berikutnya yang disarankan: lanjut ke platform settings dasar atau filter/search pada tabel admin yang sudah mulai besar.
+Lanjut berikutnya yang disarankan: rapikan flow public checkout agar membaca status settings pada UI CTA, atau lanjut ke hardening upload policy.
 
 ### 0. Architecture Guardrails
 
@@ -1398,8 +1402,10 @@ Lanjut berikutnya yang disarankan: lanjut ke platform settings dasar atau filter
 - [x] Buat product/course moderation list.
 - [x] Buat order monitoring.
 - [x] Buat payment monitoring.
-- [ ] Buat platform settings placeholder.
-- [ ] Buat platform statistics.
+- [x] Tambahkan search/filter untuk tabel admin users, content, products, orders, dan payments.
+- [x] Buat platform settings placeholder.
+- [x] Buat platform settings dasar yang tersimpan di database.
+- [x] Buat platform statistics.
 - [x] Tambahkan status aktif/nonaktif untuk user.
 - [x] Tambahkan status moderation untuk produk/course.
 - [x] Tambahkan audit log untuk aksi admin pada fase lanjutan.

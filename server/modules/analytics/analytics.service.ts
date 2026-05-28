@@ -8,6 +8,7 @@ import {
   findTrackablePublicPage,
 } from "@/server/modules/analytics/analytics.repository";
 import type { TrackPublicAnalyticsInput } from "@/server/modules/analytics/analytics.schema";
+import { isAnalyticsTrackingEnabled } from "@/server/modules/platform-settings/platform-settings.service";
 
 type TrackAnalyticsEventParams = {
   userId?: string | null;
@@ -27,7 +28,11 @@ type PublicTrackContext = {
   userAgent?: string | null;
 };
 
-export function trackAnalyticsEvent(prisma: PrismaClient, params: TrackAnalyticsEventParams) {
+export async function trackAnalyticsEvent(prisma: PrismaClient, params: TrackAnalyticsEventParams) {
+  if (!(await isAnalyticsTrackingEnabled(prisma))) {
+    return null;
+  }
+
   return createAnalyticsEvent(prisma, {
     userId: params.userId,
     publicPageId: params.publicPageId,

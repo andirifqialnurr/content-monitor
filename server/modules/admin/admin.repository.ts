@@ -1,4 +1,47 @@
-import type { PrismaClient } from "@prisma/client";
+import type {
+  ContentStatus,
+  ContentType,
+  ModerationStatus,
+  OrderStatus,
+  PaymentProvider,
+  PaymentTransactionStatus,
+  Prisma,
+  PrismaClient,
+  ProductStatus,
+  ProductType,
+  UserRole,
+  UserStatus,
+} from "@prisma/client";
+
+type AdminOrderFilters = {
+  query?: string;
+  status?: OrderStatus;
+};
+
+type AdminPaymentFilters = {
+  query?: string;
+  status?: PaymentTransactionStatus;
+  provider?: PaymentProvider;
+};
+
+type AdminUserFilters = {
+  query?: string;
+  status?: UserStatus;
+  role?: UserRole;
+};
+
+type AdminContentFilters = {
+  query?: string;
+  status?: ContentStatus;
+  type?: ContentType;
+};
+
+type AdminProductFilters = {
+  query?: string;
+  status?: ProductStatus;
+  moderationStatus?: ModerationStatus;
+  type?: ProductType;
+};
 
 export async function getPlatformCounts(prisma: PrismaClient) {
   const [
@@ -43,8 +86,26 @@ export function getPlatformRevenue(prisma: PrismaClient) {
   });
 }
 
-export function listRecentAdminOrders(prisma: PrismaClient, limit = 20) {
+export function listRecentAdminOrders(prisma: PrismaClient, limit = 20, filters: AdminOrderFilters = {}) {
+  const where: Prisma.OrderWhereInput = {
+    status: filters.status,
+  };
+
+  if (filters.query) {
+    where.OR = [
+      { id: { contains: filters.query } },
+      { buyerEmail: { contains: filters.query } },
+      { buyerName: { contains: filters.query } },
+      { product: { title: { contains: filters.query } } },
+      { creator: { email: { contains: filters.query } } },
+      { creator: { username: { contains: filters.query } } },
+      { buyer: { email: { contains: filters.query } } },
+      { buyer: { username: { contains: filters.query } } },
+    ];
+  }
+
   return prisma.order.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     take: limit,
     include: {
@@ -88,8 +149,26 @@ export function listRecentAdminOrders(prisma: PrismaClient, limit = 20) {
   });
 }
 
-export function listRecentAdminPayments(prisma: PrismaClient, limit = 20) {
+export function listRecentAdminPayments(prisma: PrismaClient, limit = 20, filters: AdminPaymentFilters = {}) {
+  const where: Prisma.PaymentTransactionWhereInput = {
+    status: filters.status,
+    provider: filters.provider,
+  };
+
+  if (filters.query) {
+    where.OR = [
+      { id: { contains: filters.query } },
+      { orderId: { contains: filters.query } },
+      { providerReference: { contains: filters.query } },
+      { order: { buyerEmail: { contains: filters.query } } },
+      { order: { product: { title: { contains: filters.query } } } },
+      { order: { creator: { email: { contains: filters.query } } } },
+      { order: { creator: { username: { contains: filters.query } } } },
+    ];
+  }
+
   return prisma.paymentTransaction.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     take: limit,
     include: {
@@ -125,8 +204,22 @@ export function listRecentAdminPayments(prisma: PrismaClient, limit = 20) {
   });
 }
 
-export function listAdminUsers(prisma: PrismaClient, limit = 100) {
+export function listAdminUsers(prisma: PrismaClient, limit = 100, filters: AdminUserFilters = {}) {
+  const where: Prisma.UserWhereInput = {
+    status: filters.status,
+    role: filters.role,
+  };
+
+  if (filters.query) {
+    where.OR = [
+      { name: { contains: filters.query } },
+      { email: { contains: filters.query } },
+      { username: { contains: filters.query } },
+    ];
+  }
+
   return prisma.user.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     take: limit,
     include: {
@@ -149,8 +242,24 @@ export function listAdminUsers(prisma: PrismaClient, limit = 100) {
   });
 }
 
-export function listAdminContentItems(prisma: PrismaClient, limit = 100) {
+export function listAdminContentItems(prisma: PrismaClient, limit = 100, filters: AdminContentFilters = {}) {
+  const where: Prisma.ContentItemWhereInput = {
+    status: filters.status,
+    type: filters.type,
+  };
+
+  if (filters.query) {
+    where.OR = [
+      { title: { contains: filters.query } },
+      { slug: { contains: filters.query } },
+      { body: { contains: filters.query } },
+      { user: { email: { contains: filters.query } } },
+      { user: { username: { contains: filters.query } } },
+    ];
+  }
+
   return prisma.contentItem.findMany({
+    where,
     orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
     take: limit,
     include: {
@@ -171,8 +280,25 @@ export function listAdminContentItems(prisma: PrismaClient, limit = 100) {
   });
 }
 
-export function listAdminProducts(prisma: PrismaClient, limit = 100) {
+export function listAdminProducts(prisma: PrismaClient, limit = 100, filters: AdminProductFilters = {}) {
+  const where: Prisma.ProductWhereInput = {
+    status: filters.status,
+    moderationStatus: filters.moderationStatus,
+    type: filters.type,
+  };
+
+  if (filters.query) {
+    where.OR = [
+      { title: { contains: filters.query } },
+      { slug: { contains: filters.query } },
+      { description: { contains: filters.query } },
+      { user: { email: { contains: filters.query } } },
+      { user: { username: { contains: filters.query } } },
+    ];
+  }
+
   return prisma.product.findMany({
+    where,
     orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
     take: limit,
     include: {
@@ -240,7 +366,7 @@ export function createAdminAuditLog(
     actorUserId: string;
     targetUserId?: string | null;
     targetProductId?: string | null;
-    action: "USER_STATUS_UPDATED" | "PRODUCT_MODERATION_UPDATED";
+    action: "USER_STATUS_UPDATED" | "PRODUCT_MODERATION_UPDATED" | "PLATFORM_SETTINGS_UPDATED";
     metadataJson?: string | null;
   },
 ) {

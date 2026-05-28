@@ -22,6 +22,15 @@ import type {
   UpdateAdminUserStatusInput,
 } from "@/server/modules/admin/admin.schema";
 
+export type AdminListFilters = {
+  query?: string;
+  status?: string;
+  role?: string;
+  provider?: string;
+  type?: string;
+  moderationStatus?: string;
+};
+
 export async function getAdminOverview(prisma: PrismaClient) {
   const [counts, revenue, orderStatusGroups, paymentStatusGroups, recentOrders, recentPayments, auditLogs] =
     await Promise.all([
@@ -49,24 +58,44 @@ export async function getAdminOverview(prisma: PrismaClient) {
   };
 }
 
-export function getAdminOrders(prisma: PrismaClient) {
-  return listRecentAdminOrders(prisma, 50);
+export function getAdminOrders(prisma: PrismaClient, filters: AdminListFilters = {}) {
+  return listRecentAdminOrders(prisma, 50, {
+    query: filters.query,
+    status: toEnum(filters.status),
+  });
 }
 
-export function getAdminPayments(prisma: PrismaClient) {
-  return listRecentAdminPayments(prisma, 50);
+export function getAdminPayments(prisma: PrismaClient, filters: AdminListFilters = {}) {
+  return listRecentAdminPayments(prisma, 50, {
+    query: filters.query,
+    status: toEnum(filters.status),
+    provider: toEnum(filters.provider),
+  });
 }
 
-export function getAdminUsers(prisma: PrismaClient) {
-  return listAdminUsers(prisma, 100);
+export function getAdminUsers(prisma: PrismaClient, filters: AdminListFilters = {}) {
+  return listAdminUsers(prisma, 100, {
+    query: filters.query,
+    status: toEnum(filters.status),
+    role: toEnum(filters.role),
+  });
 }
 
-export function getAdminContentItems(prisma: PrismaClient) {
-  return listAdminContentItems(prisma, 100);
+export function getAdminContentItems(prisma: PrismaClient, filters: AdminListFilters = {}) {
+  return listAdminContentItems(prisma, 100, {
+    query: filters.query,
+    status: toEnum(filters.status),
+    type: toEnum(filters.type),
+  });
 }
 
-export function getAdminProducts(prisma: PrismaClient) {
-  return listAdminProducts(prisma, 100);
+export function getAdminProducts(prisma: PrismaClient, filters: AdminListFilters = {}) {
+  return listAdminProducts(prisma, 100, {
+    query: filters.query,
+    status: toEnum(filters.status),
+    moderationStatus: toEnum(filters.moderationStatus),
+    type: toEnum(filters.type),
+  });
 }
 
 export function getAdminAuditLogs(prisma: PrismaClient) {
@@ -140,4 +169,8 @@ export async function updateAdminProductModeration(
 
 function calculateRate(value: number, total: number) {
   return total > 0 ? Math.round((value / total) * 100) : 0;
+}
+
+function toEnum<TValue extends string>(value: string | undefined) {
+  return value && value !== "ALL" ? (value as TValue) : undefined;
 }

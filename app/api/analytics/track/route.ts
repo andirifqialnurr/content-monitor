@@ -5,6 +5,7 @@ import { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { trackPublicAnalyticsEvent } from "@/server/modules/analytics/analytics.service";
 import { trackPublicAnalyticsInputSchema } from "@/server/modules/analytics/analytics.schema";
+import { isAnalyticsTrackingEnabled } from "@/server/modules/platform-settings/platform-settings.service";
 
 const visitorCookieName = "cm_visitor_id";
 
@@ -12,6 +13,10 @@ export async function POST(request: NextRequest) {
   const visitorId = request.cookies.get(visitorCookieName)?.value ?? randomUUID();
 
   try {
+    if (!(await isAnalyticsTrackingEnabled(prisma))) {
+      return NextResponse.json({ ok: true, skipped: true });
+    }
+
     const input = trackPublicAnalyticsInputSchema.parse(await request.json());
 
     await trackPublicAnalyticsEvent(prisma, input, {

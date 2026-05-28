@@ -20,12 +20,17 @@ import type {
   SubmitQuizAttemptInput,
   UpdateLessonProgressInput,
 } from "@/server/modules/learn/learn.schema";
+import { assertLearnerAccessEnabled } from "@/server/modules/platform-settings/platform-settings.service";
 
-export function getLearnerCourses(prisma: PrismaClient, learnerUserId: string) {
+export async function getLearnerCourses(prisma: PrismaClient, learnerUserId: string) {
+  await assertLearnerAccessEnabled(prisma);
+
   return listLearnerCourses(prisma, learnerUserId);
 }
 
 export async function getLearnerCourse(prisma: PrismaClient, learnerUserId: string, input: GetLearnerCourseInput) {
+  await assertLearnerAccessEnabled(prisma);
+
   const enrollment = await findLearnerCourseBySlug(prisma, {
     learnerUserId,
     courseSlug: input.courseSlug,
@@ -39,6 +44,8 @@ export async function saveLessonProgress(
   learnerUserId: string,
   input: UpdateLessonProgressInput,
 ) {
+  await assertLearnerAccessEnabled(prisma);
+
   const enrollment = await findLearnerCourseBySlug(prisma, {
     learnerUserId,
     courseSlug: input.courseSlug,
@@ -64,6 +71,8 @@ export async function submitQuizAttempt(
   learnerUserId: string,
   input: SubmitQuizAttemptInput,
 ) {
+  await assertLearnerAccessEnabled(prisma);
+
   const enrollment = await findLearnerCourseBySlug(prisma, {
     learnerUserId,
     courseSlug: input.courseSlug,

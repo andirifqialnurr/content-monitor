@@ -6,6 +6,7 @@ import {
   trackAnalyticsEventOnceByOrder,
 } from "@/server/modules/analytics/analytics.service";
 import { createPaymentProviderAdapter } from "@/server/modules/payments/payment-provider";
+import { getPlatformPaymentSettings } from "@/server/modules/platform-settings/platform-settings.service";
 import {
   applyPaymentStatus,
   createPaymentTransaction,
@@ -32,7 +33,11 @@ export async function startProductCheckout(
   const buyerEmail = assertCheckoutBuyerEmail(buyer.email);
   await assertProductIsNotAlreadyOwned(prisma, buyer.id, product.id, product.type);
 
-  const provider = createPaymentProviderAdapter("MIDTRANS");
+  const paymentSettings = await getPlatformPaymentSettings(prisma);
+  assertPublicCheckoutEnabled(paymentSettings);
+  const provider = createPaymentProviderAdapter(paymentSettings.paymentProvider, {
+    paymentMode: paymentSettings.paymentMode,
+  });
   const order = await createPendingOrder(prisma, {
     creatorUserId: product.userId,
     buyerUserId: buyer.id,
@@ -105,7 +110,10 @@ export async function getPaymentOrder(
 }
 
 export async function handlePaymentWebhook(prisma: PrismaClient, payload: unknown) {
-  const provider = createPaymentProviderAdapter("MIDTRANS");
+  const paymentSettings = await getPlatformPaymentSettings(prisma);
+  const provider = createPaymentProviderAdapter(paymentSettings.paymentProvider, {
+    paymentMode: paymentSettings.paymentMode,
+  });
   const event = provider.parseWebhook(payload);
 
   try {
@@ -136,6 +144,15 @@ export async function handlePaymentWebhook(prisma: PrismaClient, payload: unknow
     throw new TRPCError({
       code: "NOT_FOUND",
       message: "Order payment tidak ditemukan.",
+    });
+  }
+}
+
+function assertPublicCheckoutEnabled(settings: Awaited<ReturnType<typeof getPlatformPaymentSettings>>) {
+  if (!settings.publicCheckoutEnabled || settings.paymentMode === "DISABLED") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Checkout publik belum aktif.",
     });
   }
 }

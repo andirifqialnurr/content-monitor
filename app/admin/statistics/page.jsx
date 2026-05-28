@@ -1,12 +1,9 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { AdminStatisticsDashboard } from "@/components/admin/admin-statistics-dashboard";
+import { prisma } from "@/lib/prisma";
+import { getAdminPlatformStatistics } from "@/server/modules/admin-statistics/admin-statistics.service";
 
-export default function AdminStatisticsPage() {
-  return (
-    <ModulePlaceholder
-      eyebrow="Admin"
-      title="Platform Statistics"
-      description="Statistik global untuk user, creator aktif, produk, order, revenue, dan performa platform."
-      items={["Total users", "Active creators", "Active products", "Orders", "Revenue", "Course completion"]}
-    />
-  );
+export default async function AdminStatisticsPage() {
+  const statistics = await getAdminPlatformStatistics(prisma);
+
+  return <AdminStatisticsDashboard statistics={statistics} />;
 }

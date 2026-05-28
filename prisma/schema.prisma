@@ -116,9 +116,16 @@ enum PaymentTransactionStatus {
   REFUNDED
 }
 
+enum PlatformPaymentMode {
+  DISABLED
+  SANDBOX
+  PRODUCTION
+}
+
 enum AdminAuditAction {
   USER_STATUS_UPDATED
   PRODUCT_MODERATION_UPDATED
+  PLATFORM_SETTINGS_UPDATED
 }
 
 model User {
@@ -373,6 +380,21 @@ model PaymentTransaction {
   order             Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([provider, providerReference])
+}
+
+model PlatformSettings {
+  id                       String              @id @default("platform")
+  paymentProvider          PaymentProvider     @default(MIDTRANS)
+  paymentMode              PlatformPaymentMode @default(DISABLED)
+  platformFeePercent       Int                 @default(0)
+  maxUploadMb              Int                 @default(25)
+  allowedMimeTypesJson     String              @default("[]")
+  publicCheckoutEnabled    Boolean             @default(false)
+  learnerAccessEnabled     Boolean             @default(true)
+  analyticsTrackingEnabled Boolean             @default(true)
+  updatedByUserId          String?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
 }
 
 model Enrollment {
