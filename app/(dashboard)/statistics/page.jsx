@@ -1,12 +1,17 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { redirect } from "next/navigation";
+import { StatisticsDashboard } from "@/components/statistics/statistics-dashboard";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/server/auth/session";
+import { getUserStatistics } from "@/server/modules/statistics/statistics.service";
 
-export default function StatisticsPage() {
-  return (
-    <ModulePlaceholder
-      eyebrow="Analytics"
-      title="Statistics"
-      description="Statistik klik, pembelian, revenue, enrollment, progress belajar, dan skor quiz."
-      items={["Page views", "Product clicks", "Purchases", "Revenue", "Enrollment", "Lesson completion", "Quiz scores"]}
-    />
-  );
+export default async function StatisticsPage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login?callbackUrl=/statistics");
+  }
+
+  const statistics = await getUserStatistics(prisma, user.id);
+
+  return <StatisticsDashboard statistics={statistics} />;
 }

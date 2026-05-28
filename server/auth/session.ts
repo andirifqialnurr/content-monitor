@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions, type UserRole } from "@/server/auth/config";
+import { prisma } from "@/lib/prisma";
 
 export type AuthUser = {
   id: string;
@@ -23,10 +24,25 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     return null;
   }
 
+  const currentUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      status: true,
+    },
+  });
+
+  if (!currentUser || currentUser.status !== "ACTIVE") {
+    return null;
+  }
+
   return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role ?? "USER",
+    id: currentUser.id,
+    email: currentUser.email,
+    name: currentUser.name,
+    role: currentUser.role,
   };
 }

@@ -1,14 +1,52 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { notFound } from "next/navigation";
+import { PublicProductSales } from "@/components/products/public-product-sales";
+import { prisma } from "@/lib/prisma";
 
-export default function PublicCoursePage() {
-  return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <ModulePlaceholder
-        eyebrow="Public Course"
-        title="Course Sales Page"
-        description="Placeholder halaman sales/detail course publik sebelum checkout."
-        items={["Course description", "Modules", "Preview lessons", "Price", "Checkout CTA", "Creator profile"]}
-      />
-    </main>
-  );
+export default async function PublicCoursePage({ params }) {
+  const resolvedParams = await params;
+  const course = await prisma.product.findFirst({
+    where: {
+      slug: resolvedParams["course-slug"],
+      type: "COURSE",
+      status: "ACTIVE",
+      moderationStatus: { not: "DISABLED" },
+      user: {
+        username: resolvedParams.username,
+      },
+    },
+    include: publicProductInclude,
+  });
+
+  if (!course) {
+    notFound();
+  }
+
+  return <PublicProductSales product={course} />;
 }
+
+const publicProductInclude = {
+  user: {
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      email: true,
+    },
+  },
+  modules: {
+    orderBy: { order: "asc" },
+    include: {
+      lessons: {
+        orderBy: { order: "asc" },
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          duration: true,
+          isPreview: true,
+          order: true,
+        },
+      },
+    },
+  },
+};

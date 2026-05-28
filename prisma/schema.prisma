@@ -11,6 +11,11 @@ enum UserRole {
   USER
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
 enum ContentType {
   VIDEO_SHORT
   CAROUSEL_POST
@@ -34,6 +39,12 @@ enum ProductStatus {
   DRAFT
   ACTIVE
   INACTIVE
+}
+
+enum ModerationStatus {
+  APPROVED
+  REVIEW_REQUIRED
+  DISABLED
 }
 
 enum CourseLessonType {
@@ -105,12 +116,18 @@ enum PaymentTransactionStatus {
   REFUNDED
 }
 
+enum AdminAuditAction {
+  USER_STATUS_UPDATED
+  PRODUCT_MODERATION_UPDATED
+}
+
 model User {
   id                 String           @id @default(cuid())
   name               String?
   email              String           @unique
   passwordHash       String?
   role               UserRole         @default(USER)
+  status             UserStatus       @default(ACTIVE)
   username           String           @unique
   avatarUrl          String?
   bio                String?
@@ -125,6 +142,8 @@ model User {
   products           Product[]
   publicPage         PublicPage?
   boughtOrders       Order[]          @relation("BoughtOrders")
+  adminAuditActions  AdminAuditLog[]  @relation("AdminAuditActor")
+  userAuditEvents    AdminAuditLog[]  @relation("AdminAuditTargetUser")
 }
 
 model ContentItem {
@@ -165,6 +184,7 @@ model Product {
   coverUrl        String?
   fileUrl         String?
   status          ProductStatus     @default(DRAFT)
+  moderationStatus ModerationStatus @default(APPROVED)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   analyticsEvents AnalyticsEvent[]
@@ -174,6 +194,7 @@ model Product {
   pageBlocks      PublicPageBlock[]
   quizzes         Quiz[]
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auditEvents     AdminAuditLog[]   @relation("AdminAuditTargetProduct")
 
   @@unique([userId, slug])
   @@index([userId, type])
@@ -400,6 +421,25 @@ model QuizAttempt {
   quiz         Quiz       @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   @@index([enrollmentId, quizId])
+}
+
+model AdminAuditLog {
+  id              String           @id @default(cuid())
+  actorUserId     String
+  targetUserId    String?
+  targetProductId String?
+  action          AdminAuditAction
+  metadataJson    String?
+  createdAt       DateTime         @default(now())
+  actor           User             @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+  targetProduct   Product?         @relation("AdminAuditTargetProduct", fields: [targetProductId], references: [id], onDelete: SetNull)
+  targetUser      User?            @relation("AdminAuditTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([targetUserId])
+  @@index([targetProductId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 model ReferenceFile {

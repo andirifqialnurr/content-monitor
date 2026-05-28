@@ -1,5 +1,9 @@
-import { redirect } from "next/navigation";
+import { AdminOverview } from "@/components/admin/admin-overview";
+import { prisma } from "@/lib/prisma";
+import { getAdminOverview } from "@/server/modules/admin/admin.service";
 
-export default function AdminIndexPage() {
-  redirect("/admin/users");
+export default async function AdminIndexPage() {
+  const overview = await getAdminOverview(prisma);
+
+  return <AdminOverview overview={overview} />;
 }

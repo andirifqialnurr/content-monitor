@@ -82,6 +82,7 @@ export function CoursePlayer({ courseSlug }) {
       <CoursePreview
         product={product}
         mode="learner"
+        completedAt={enrollment.completedAt}
         progressByLessonId={progressByLessonId}
         quizAttempts={enrollment.quizAttempts}
         onMarkComplete={handleMarkComplete}

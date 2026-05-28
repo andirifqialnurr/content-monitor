@@ -128,6 +128,13 @@ export function upsertLessonProgress(prisma: PrismaClient, params: UpsertLessonP
   });
 }
 
+export function updateEnrollmentCompletion(prisma: PrismaClient, enrollmentId: string, completedAt: Date | null) {
+  return prisma.enrollment.update({
+    where: { id: enrollmentId },
+    data: { completedAt },
+  });
+}
+
 export function findQuizById(prisma: PrismaClient, quizId: string) {
   return prisma.quiz.findUnique({
     where: { id: quizId },

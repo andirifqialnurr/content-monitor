@@ -1,11 +1,13 @@
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { trackAnalyticsEvent } from "@/server/modules/analytics/analytics.service";
 import {
   countSubmittedQuizAttempts,
   createQuizAttempt,
   findQuizById,
   findLearnerCourseBySlug,
   listLearnerCourses,
+  updateEnrollmentCompletion,
   upsertLessonProgress,
 } from "@/server/modules/learn/learn.repository";
 import {
@@ -43,12 +45,18 @@ export async function saveLessonProgress(
   });
   const activeEnrollment = assertLearnerEnrollment(enrollment, learnerUserId);
   assertLessonBelongsToEnrollment(activeEnrollment, input.lessonId);
+  const previousProgress = activeEnrollment.progress.find((progress) => progress.lessonId === input.lessonId);
+  const isFirstProgress = activeEnrollment.progress.length === 0 && input.status !== "NOT_STARTED";
 
-  return upsertLessonProgress(prisma, {
+  const progress = await upsertLessonProgress(prisma, {
     enrollmentId: activeEnrollment.id,
     lessonId: input.lessonId,
     status: input.status,
   });
+  await syncCourseCompletion(prisma, activeEnrollment, input.lessonId, input.status);
+  await trackLessonProgressEvents(prisma, activeEnrollment, learnerUserId, input, previousProgress?.status, isFirstProgress);
+
+  return progress;
 }
 
 export async function submitQuizAttempt(
@@ -83,13 +91,28 @@ export async function submitQuizAttempt(
 
   const scoreResult = scoreQuiz(quiz, input.answers);
 
-  return createQuizAttempt(prisma, {
+  const attempt = await createQuizAttempt(prisma, {
     enrollmentId: activeEnrollment.id,
     quizId: quiz.id,
     score: scoreResult.score,
     passed: scoreResult.passed,
     answersJson: JSON.stringify(scoreResult.answers),
   });
+  await trackAnalyticsEvent(prisma, {
+    userId: activeEnrollment.creatorUserId,
+    productId: activeEnrollment.productId,
+    type: "QUIZ_SUBMITTED",
+    metadata: {
+      learnerUserId,
+      enrollmentId: activeEnrollment.id,
+      quizId: quiz.id,
+      attemptId: attempt.id,
+      score: scoreResult.score,
+      passed: scoreResult.passed,
+    },
+  }).catch(() => null);
+
+  return attempt;
 }
 
 function scoreQuiz(
@@ -146,4 +169,70 @@ function isAnswerCorrect(
 
 function normalizeTextAnswer(value: string | null | undefined) {
   return (value ?? "").trim().toLowerCase();
+}
+
+async function syncCourseCompletion(
+  prisma: PrismaClient,
+  enrollment: NonNullable<Awaited<ReturnType<typeof findLearnerCourseBySlug>>>,
+  lessonId: string,
+  status: UpdateLessonProgressInput["status"],
+) {
+  const lessonIds = enrollment.product.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id));
+
+  if (lessonIds.length === 0) {
+    await updateEnrollmentCompletion(prisma, enrollment.id, null);
+    return;
+  }
+
+  const completedLessonIds = new Set(
+    enrollment.progress.filter((progress) => progress.status === "COMPLETED").map((progress) => progress.lessonId),
+  );
+
+  if (status === "COMPLETED") {
+    completedLessonIds.add(lessonId);
+  } else {
+    completedLessonIds.delete(lessonId);
+  }
+
+  const isCompleted = lessonIds.every((id) => completedLessonIds.has(id));
+  const completedAt = isCompleted ? enrollment.completedAt ?? new Date() : null;
+
+  await updateEnrollmentCompletion(prisma, enrollment.id, completedAt);
+}
+
+async function trackLessonProgressEvents(
+  prisma: PrismaClient,
+  enrollment: NonNullable<Awaited<ReturnType<typeof findLearnerCourseBySlug>>>,
+  learnerUserId: string,
+  input: UpdateLessonProgressInput,
+  previousStatus: string | undefined,
+  isFirstProgress: boolean,
+) {
+  if (isFirstProgress) {
+    await trackAnalyticsEvent(prisma, {
+      userId: enrollment.creatorUserId,
+      productId: enrollment.productId,
+      type: "COURSE_STARTED",
+      metadata: {
+        learnerUserId,
+        enrollmentId: enrollment.id,
+        lessonId: input.lessonId,
+      },
+    }).catch(() => null);
+  }
+
+  if (input.status !== "COMPLETED" || previousStatus === "COMPLETED") {
+    return;
+  }
+
+  await trackAnalyticsEvent(prisma, {
+    userId: enrollment.creatorUserId,
+    productId: enrollment.productId,
+    type: "LESSON_COMPLETED",
+    metadata: {
+      learnerUserId,
+      enrollmentId: enrollment.id,
+      lessonId: input.lessonId,
+    },
+  }).catch(() => null);
 }

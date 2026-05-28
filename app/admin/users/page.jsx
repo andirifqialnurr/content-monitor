@@ -1,12 +1,19 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { AdminUsersTable } from "@/components/admin/admin-users-table";
+import { prisma } from "@/lib/prisma";
+import { getAdminUsers } from "@/server/modules/admin/admin.service";
+import { PageHeader } from "@/components/shared/page-header";
 
-export default function AdminUsersPage() {
+export default async function AdminUsersPage() {
+  const users = await getAdminUsers(prisma);
+
   return (
-    <ModulePlaceholder
-      eyebrow="Admin"
-      title="Users"
-      description="Pengelolaan user platform. Route ini nanti hanya bisa diakses role ADMIN."
-      items={["User list", "User status", "Activity summary", "Role view", "Disable user"]}
-    />
+    <div className="grid gap-4">
+      <PageHeader
+        eyebrow="Admin"
+        title="Users"
+        description="Monitoring user platform, role, ownership data, public page, dan aktivitas dasar."
+      />
+      <AdminUsersTable users={users} />
+    </div>
   );
 }

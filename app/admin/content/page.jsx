@@ -1,12 +1,19 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { AdminContentTable } from "@/components/admin/admin-content-table";
+import { prisma } from "@/lib/prisma";
+import { getAdminContentItems } from "@/server/modules/admin/admin.service";
+import { PageHeader } from "@/components/shared/page-header";
 
-export default function AdminContentPage() {
+export default async function AdminContentPage() {
+  const contentItems = await getAdminContentItems(prisma);
+
   return (
-    <ModulePlaceholder
-      eyebrow="Admin"
-      title="Content Moderation"
-      description="Moderasi konten publik, halaman user, dan konten yang perlu ditinjau."
-      items={["Public pages", "Content reports", "Review queue", "Disable content", "Audit notes"]}
-    />
+    <div className="grid gap-4">
+      <PageHeader
+        eyebrow="Admin"
+        title="Content Moderation"
+        description="Monitoring konten lintas user, status publish, jadwal, dan keterkaitan ke public page block."
+      />
+      <AdminContentTable contentItems={contentItems} />
+    </div>
   );
 }

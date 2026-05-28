@@ -1,12 +1,19 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { AdminPaymentsTable } from "@/components/admin/admin-payments-table";
+import { prisma } from "@/lib/prisma";
+import { getAdminPayments } from "@/server/modules/admin/admin.service";
+import { PageHeader } from "@/components/shared/page-header";
 
-export default function AdminPaymentsPage() {
+export default async function AdminPaymentsPage() {
+  const payments = await getAdminPayments(prisma);
+
   return (
-    <ModulePlaceholder
-      eyebrow="Admin"
-      title="Payments"
-      description="Monitoring transaksi payment gateway, webhook, dan status provider."
-      items={["Provider reference", "Webhook status", "Transaction status", "Failure reason", "Reconcile"]}
-    />
+    <div className="grid gap-4">
+      <PageHeader
+        eyebrow="Admin"
+        title="Payments"
+        description="Monitoring transaksi payment gateway, webhook, status provider, dan order terkait."
+      />
+      <AdminPaymentsTable payments={payments} />
+    </div>
   );
 }

@@ -98,12 +98,13 @@ function CourseCard({ enrollment }) {
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">{enrollment.status}</Badge>
           <Badge variant="outline">Mulai {formatDate(enrollment.startedAt)}</Badge>
+          {enrollment.completedAt && <Badge variant="outline">Selesai {formatDate(enrollment.completedAt)}</Badge>}
         </div>
 
         <Button asChild>
           <Link href={`/learn/${product.slug}`}>
             <GraduationCap className="size-4" />
-            Lanjut belajar
+            {enrollment.completedAt ? "Buka course" : "Lanjut belajar"}
             <ArrowRight className="size-4" />
           </Link>
         </Button>

@@ -1,14 +1,45 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { notFound } from "next/navigation";
+import { PublicPageRenderer } from "@/components/appearance/public-page-renderer";
+import { prisma } from "@/lib/prisma";
 
-export default function PublicProfilePage() {
-  return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <ModulePlaceholder
-        eyebrow="Public Page"
-        title="Creator Public Page"
-        description="Placeholder halaman publik user seperti direct link. Data final akan diambil dari PublicPage."
-        items={["Profile", "Social links", "Product blocks", "Course blocks", "Theme", "Click tracking"]}
-      />
-    </main>
-  );
+export default async function PublicProfilePage({ params }) {
+  const resolvedParams = await params;
+  const user = await prisma.user.findUnique({
+    where: { username: resolvedParams.username },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      avatarUrl: true,
+      bio: true,
+      publicPage: {
+        include: {
+          blocks: {
+            where: { isVisible: true },
+            orderBy: { order: "asc" },
+            include: {
+              product: true,
+              contentItem: true,
+            },
+          },
+        },
+      },
+      products: {
+        where: {
+          status: "ACTIVE",
+          moderationStatus: { not: "DISABLED" },
+        },
+        orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+        take: 8,
+      },
+    },
+  });
+
+  if (!user) {
+    notFound();
+  }
+
+  const publicPage = user.publicPage?.isPublished ? user.publicPage : null;
+
+  return <PublicPageRenderer publicPage={publicPage} user={user} fallbackProducts={user.products} />;
 }

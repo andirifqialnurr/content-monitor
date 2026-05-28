@@ -5,6 +5,7 @@ import {
   Box,
   CreditCard,
   FileWarning,
+  Gauge,
   MonitorCog,
   ReceiptText,
   Settings,
@@ -18,6 +19,7 @@ const adminSections = [
   {
     label: "Admin",
     items: [
+      { href: "/admin", label: "Overview", icon: Gauge },
       { href: "/admin/users", label: "Users", icon: Users },
       { href: "/admin/content", label: "Content", icon: FileWarning },
       { href: "/admin/products", label: "Products", icon: Box },

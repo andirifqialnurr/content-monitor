@@ -1127,7 +1127,7 @@ Contoh penerapan:
 
 ## Todo List Implementasi
 
-### Progress Terakhir - 2026-05-23
+### Progress Terakhir - 2026-05-28
 
 Fokus sesi terakhir: memverifikasi Produk Dasar yang belum di-commit dan mulai Course Builder untuk module serta lesson.
 
@@ -1162,8 +1162,31 @@ Fokus sesi terakhir: memverifikasi Produk Dasar yang belum di-commit dan mulai C
 - Preview course sebagai creator sudah tersedia dari detail internal course.
 - Learner area dasar sudah menampilkan enrollment course, course player, sidebar module/lesson, viewer bacaan/video, resource lesson, dan simpan progress lesson.
 - Quiz attempt learner sudah bisa submit jawaban, menghitung skor, menyimpan attempt, dan menandai lulus/belum lulus berdasarkan passing score.
+- Backend payment awal sudah ditambahkan melalui router tRPC `payments`.
+- `payments.checkout` membuat order `PENDING`, membuat transaksi Midtrans Snap saat env tersedia, dan mencegah pembelian produk sendiri atau produk yang sudah dimiliki.
+- Webhook `/api/payment/webhook` memverifikasi signature Midtrans, memperbarui status order/transaksi, dan membuat enrollment course otomatis saat order `PAID`.
+- Halaman sales course publik `/{username}/course/[course-slug]` sudah memakai data produk aktif dan memiliki CTA checkout.
+- Halaman sales e-book publik `/{username}/product/[product-slug]` sudah tersedia untuk CTA checkout produk digital.
+- Halaman status order `/payment/orders/[order-id]` sudah tersedia untuk melihat status webhook, membuka course, atau mengunduh e-book setelah `PAID`.
+- Course completion sudah dihitung otomatis dari progress lesson dan disimpan ke `Enrollment.completedAt`.
+- Tracking analytics backend sudah mencatat `CHECKOUT_STARTED`, `PURCHASE_COMPLETED`, `COURSE_STARTED`, `LESSON_COMPLETED`, dan `QUIZ_SUBMITTED`.
+- Endpoint public analytics `/api/analytics/track` sudah tersedia untuk page view, product click, dan link/block click.
+- Route publik `/{username}` sudah merender public page yang published atau fallback produk aktif, dengan tracking view/click dasar.
+- Dashboard `/statistics` sudah menampilkan summary page view/click, revenue, conversion, product performance, enrollment, progress course, dan quiz score.
+- Appearance editor `/appearance` sudah tersedia untuk mengatur profile section, theme sederhana, publish/unpublish, dan block link/produk/konten.
+- Appearance editor sudah memiliki mobile preview, kontrol urutan block naik/turun, edit block inline, dan template theme cepat.
+- Route publik `/{username}/content/[content-slug]` sudah tersedia untuk block konten/blog yang statusnya `PUBLISHED`.
+- Admin overview `/admin` sudah menampilkan summary user, produk, order, revenue, failed payment, dan enrollment.
+- Admin order monitoring `/admin/orders` sudah menampilkan order lintas platform dengan buyer, creator, produk, status payment, dan enrollment.
+- Admin payment monitoring `/admin/payments` sudah menampilkan transaksi payment gateway dengan provider, reference, order, buyer, creator, dan status.
+- Admin users `/admin/users` sudah menampilkan user list, role, public page status, dan ringkasan aktivitas dasar.
+- Admin content `/admin/content` sudah menampilkan moderation list konten lintas user, status, jadwal, owner, dan jumlah public block terkait.
+- Admin products `/admin/products` sudah menampilkan moderation list produk/course lintas user, owner, status, order, enrollment, dan module/block count.
+- Admin bisa mengubah status user `ACTIVE/INACTIVE`; user inactive ditolak saat login dan saat session guard berikutnya.
+- Admin bisa mengubah moderation status produk/course `APPROVED/REVIEW_REQUIRED/DISABLED`; produk disabled tidak bisa dibuka publik atau checkout.
+- Aksi admin untuk status user dan product moderation sudah tercatat ke `AdminAuditLog` dan ditampilkan di admin overview.
 
-Lanjut berikutnya yang disarankan: lanjutkan payment/enrollment otomatis agar akses course bisa dibuat dari checkout.
+Lanjut berikutnya yang disarankan: lanjut ke platform settings dasar atau filter/search pada tabel admin yang sudah mulai besar.
 
 ### 0. Architecture Guardrails
 
@@ -1304,31 +1327,33 @@ Lanjut berikutnya yang disarankan: lanjutkan payment/enrollment otomatis agar ak
 
 ### 7. Appearance dan Public Page
 
-- [ ] Buat model dan editor `PublicPage`.
+- [x] Buat model dan editor `PublicPage`.
 - [x] Buat public route `/{username}`.
-- [ ] Buat block link biasa.
-- [ ] Buat block produk e-book.
-- [ ] Buat block course.
-- [ ] Buat block konten/blog highlight.
-- [ ] Tambahkan pengaturan profile section.
-- [ ] Tambahkan theme sederhana.
-- [ ] Tambahkan mobile preview.
-- [ ] Tambahkan publish/unpublish public page.
+- [x] Buat block link biasa.
+- [x] Buat block produk e-book.
+- [x] Buat block course.
+- [x] Buat block konten/blog highlight.
+- [x] Tambahkan pengaturan profile section.
+- [x] Tambahkan theme sederhana.
+- [x] Tambahkan mobile preview.
+- [x] Tambahkan publish/unpublish public page.
 - [x] Buat public course sales page `/{username}/course/[course-slug]`.
 
 ### 8. Payment dan Enrollment
 
-- [ ] Buat abstraction `paymentProvider`.
-- [ ] Siapkan konfigurasi Midtrans sandbox.
-- [ ] Buat checkout endpoint.
-- [ ] Buat webhook endpoint.
+- [x] Buat abstraction `paymentProvider`.
+- [x] Siapkan konfigurasi Midtrans sandbox.
+- [x] Buat checkout endpoint.
+- [x] Buat webhook endpoint.
+- [x] Sambungkan CTA checkout dari halaman publik produk/course.
+- [x] Tambahkan halaman status order setelah checkout.
 - [x] Buat model `Order`.
 - [x] Buat model `PaymentTransaction`.
-- [ ] Update order status dari webhook.
+- [x] Update order status dari webhook.
 - [x] Buka akses download e-book setelah order paid.
 - [x] Buat model `Enrollment`.
-- [ ] Buat enrollment otomatis untuk course setelah order paid.
-- [ ] Pastikan user tidak bisa membeli produk miliknya sendiri jika aturan ini dipilih.
+- [x] Buat enrollment otomatis untuk course setelah order paid.
+- [x] Pastikan user tidak bisa membeli produk miliknya sendiri jika aturan ini dipilih.
 
 ### 9. Learner Area
 
@@ -1345,36 +1370,36 @@ Lanjut berikutnya yang disarankan: lanjutkan payment/enrollment otomatis agar ak
 - [x] Buat flow mengerjakan quiz.
 - [x] Hitung skor quiz.
 - [x] Tandai quiz lulus/belum lulus.
-- [ ] Hitung completion course.
+- [x] Hitung completion course.
 
 ### 10. Statistics
 
 - [x] Tambahkan `AnalyticsEvent`.
-- [ ] Track page view halaman publik.
-- [ ] Track klik block/link.
-- [ ] Track klik produk.
-- [ ] Track checkout started.
-- [ ] Track purchase completed.
-- [ ] Track course started.
-- [ ] Track lesson completed.
-- [ ] Track quiz submitted.
-- [ ] Buat dashboard statistik user.
-- [ ] Tampilkan revenue.
-- [ ] Tampilkan conversion rate.
-- [ ] Tampilkan product performance.
-- [ ] Tampilkan course progress.
-- [ ] Tampilkan quiz score summary.
+- [x] Track page view halaman publik.
+- [x] Track klik block/link.
+- [x] Track klik produk.
+- [x] Track checkout started.
+- [x] Track purchase completed.
+- [x] Track course started.
+- [x] Track lesson completed.
+- [x] Track quiz submitted.
+- [x] Buat dashboard statistik user.
+- [x] Tampilkan revenue.
+- [x] Tampilkan conversion rate.
+- [x] Tampilkan product performance.
+- [x] Tampilkan course progress.
+- [x] Tampilkan quiz score summary.
 
 ### 11. Admin Area
 
-- [ ] Buat dashboard admin.
-- [ ] Buat user management.
-- [ ] Buat content moderation list.
-- [ ] Buat product/course moderation list.
-- [ ] Buat order monitoring.
-- [ ] Buat payment monitoring.
+- [x] Buat dashboard admin.
+- [x] Buat user management.
+- [x] Buat content moderation list.
+- [x] Buat product/course moderation list.
+- [x] Buat order monitoring.
+- [x] Buat payment monitoring.
 - [ ] Buat platform settings placeholder.
 - [ ] Buat platform statistics.
-- [ ] Tambahkan status aktif/nonaktif untuk user.
-- [ ] Tambahkan status moderation untuk produk/course.
-- [ ] Tambahkan audit log untuk aksi admin pada fase lanjutan.
+- [x] Tambahkan status aktif/nonaktif untuk user.
+- [x] Tambahkan status moderation untuk produk/course.
+- [x] Tambahkan audit log untuk aksi admin pada fase lanjutan.

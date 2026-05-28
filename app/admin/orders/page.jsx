@@ -1,12 +1,19 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { AdminOrdersTable } from "@/components/admin/admin-orders-table";
+import { prisma } from "@/lib/prisma";
+import { getAdminOrders } from "@/server/modules/admin/admin.service";
+import { PageHeader } from "@/components/shared/page-header";
 
-export default function AdminOrdersPage() {
+export default async function AdminOrdersPage() {
+  const orders = await getAdminOrders(prisma);
+
   return (
-    <ModulePlaceholder
-      eyebrow="Admin"
-      title="Orders"
-      description="Monitoring order lintas platform untuk investigasi transaksi dan akses produk."
-      items={["Order list", "Buyer", "Creator", "Product", "Payment status", "Enrollment status"]}
-    />
+    <div className="grid gap-4">
+      <PageHeader
+        eyebrow="Admin"
+        title="Orders"
+        description="Monitoring order lintas platform untuk investigasi transaksi dan akses produk."
+      />
+      <AdminOrdersTable orders={orders} />
+    </div>
   );
 }

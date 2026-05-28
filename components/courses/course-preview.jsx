@@ -35,6 +35,7 @@ export function CoursePreview({
   mode = "creator",
   progressByLessonId = {},
   quizAttempts = [],
+  completedAt,
   onMarkComplete,
   onSubmitQuiz,
   isProgressPending = false,
@@ -108,6 +109,11 @@ export function CoursePreview({
                   <span>{progressPercent}%</span>
                 </div>
                 <Progress value={progressPercent} />
+                {completedAt && (
+                  <Badge variant="secondary" className="w-fit">
+                    Course selesai {formatDateTime(completedAt)}
+                  </Badge>
+                )}
               </div>
             )}
           </CardContent>

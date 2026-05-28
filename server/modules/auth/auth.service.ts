@@ -42,6 +42,10 @@ export async function authenticateUser(prisma: PrismaClient, input: LoginInput) 
     return null;
   }
 
+  if (user.status !== "ACTIVE") {
+    return null;
+  }
+
   const valid = await verifyPassword(input.password, user.passwordHash);
 
   if (!valid) {
