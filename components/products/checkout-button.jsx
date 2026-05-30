@@ -7,7 +7,7 @@ import { trackPublicAnalytics } from "@/components/analytics/public-analytics-tr
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc/react";
 
-export function CheckoutButton({ productId, children = "Beli sekarang", className, analyticsMetadata }) {
+export function CheckoutButton({ productId, children = "Beli sekarang", className, analyticsMetadata, disabledReason }) {
   const pathname = usePathname();
   const router = useRouter();
   const [error, setError] = useState("");
@@ -26,6 +26,10 @@ export function CheckoutButton({ productId, children = "Beli sekarang", classNam
   });
 
   function handleCheckout() {
+    if (disabledReason) {
+      return;
+    }
+
     setError("");
     trackPublicAnalytics({
       type: "PRODUCT_CLICK",
@@ -40,10 +44,11 @@ export function CheckoutButton({ productId, children = "Beli sekarang", classNam
 
   return (
     <div className="grid gap-2">
-      <Button className={className} onClick={handleCheckout} disabled={checkoutMutation.isPending}>
+      <Button className={className} onClick={handleCheckout} disabled={Boolean(disabledReason) || checkoutMutation.isPending}>
         <CreditCard className="size-4" />
         {checkoutMutation.isPending ? "Membuka checkout..." : children}
       </Button>
+      {disabledReason && <p className="text-sm text-muted-foreground">{disabledReason}</p>}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );

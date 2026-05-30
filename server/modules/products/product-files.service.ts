@@ -7,6 +7,10 @@ import {
   replacePrivateEbookFile,
   type ReadPrivateFileResult,
 } from "@/server/modules/storage/private-file-storage";
+import { getPlatformUploadPolicy } from "@/server/modules/platform-settings/platform-settings.service";
+import { assertRateLimit } from "@/server/shared/rate-limit";
+
+const uploadRateLimitWindowMs = 60 * 60 * 1000;
 
 type EbookFileAccessResult =
   | {
@@ -19,6 +23,13 @@ type EbookFileAccessResult =
     };
 
 export async function uploadEbookFile(prisma: PrismaClient, userId: string, productId: string, file: File) {
+  assertRateLimit({
+    key: `ebook-upload:${userId}`,
+    limit: 20,
+    windowMs: uploadRateLimitWindowMs,
+    message: "Terlalu banyak upload file. Coba lagi nanti.",
+  });
+
   const product = await getEbookProduct(prisma, productId);
 
   if (product.userId !== userId) {
@@ -28,10 +39,15 @@ export async function uploadEbookFile(prisma: PrismaClient, userId: string, prod
     });
   }
 
-  const storedFile = await replacePrivateEbookFile(file, {
-    userId: product.userId,
-    productId: product.id,
-  });
+  const uploadPolicy = await getPlatformUploadPolicy(prisma);
+  const storedFile = await replacePrivateEbookFile(
+    file,
+    {
+      userId: product.userId,
+      productId: product.id,
+    },
+    uploadPolicy,
+  );
 
   await updateProduct(prisma, {
     id: product.id,

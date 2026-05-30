@@ -47,6 +47,7 @@ export function findTrackableProduct(prisma: PrismaClient, productId: string) {
     where: {
       id: productId,
       status: "ACTIVE",
+      moderationStatus: { not: "DISABLED" },
     },
     select: {
       id: true,
@@ -80,6 +81,27 @@ export function findTrackableBlock(prisma: PrismaClient, blockId: string) {
       publicPage: {
         isPublished: true,
       },
+      OR: [
+        { type: "LINK", url: { not: null } },
+        { type: "CTA", url: { not: null } },
+        {
+          type: "PRODUCT",
+          product: {
+            is: {
+              status: "ACTIVE",
+              moderationStatus: { not: "DISABLED" },
+            },
+          },
+        },
+        {
+          type: "CONTENT",
+          contentItem: {
+            is: {
+              status: "PUBLISHED",
+            },
+          },
+        },
+      ],
     },
     select: {
       id: true,

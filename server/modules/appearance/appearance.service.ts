@@ -87,12 +87,16 @@ export async function editAppearanceBlock(
   input: UpdateAppearanceBlockInput,
 ) {
   const block = assertBlockOwner(await findPageBlockById(prisma, input.id), userId);
-  await assertTargetOwnership(prisma, userId, input);
 
   const nextType = input.type ?? block.type;
   const nextProductId = nextType === "PRODUCT" ? input.productId ?? block.productId : null;
   const nextContentItemId = nextType === "CONTENT" ? input.contentItemId ?? block.contentItemId : null;
   const nextUrl = normalizeBlockUrl(nextType, input.url ?? block.url);
+  await assertTargetOwnership(prisma, userId, {
+    type: nextType,
+    productId: nextProductId,
+    contentItemId: nextContentItemId,
+  });
 
   return updatePageBlock(prisma, {
     id: input.id,
@@ -160,6 +164,13 @@ async function assertTargetOwnership(
     contentItemId?: string | null;
   },
 ) {
+  if (input.type === "PRODUCT" && !input.productId) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Produk wajib dipilih untuk block produk.",
+    });
+  }
+
   if (input.type === "PRODUCT" && input.productId) {
     const product = await findProductOwnedByUser(prisma, userId, input.productId);
 
@@ -169,6 +180,13 @@ async function assertTargetOwnership(
         message: "Produk tidak termasuk akun ini.",
       });
     }
+  }
+
+  if (input.type === "CONTENT" && !input.contentItemId) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Konten wajib dipilih untuk block konten.",
+    });
   }
 
   if (input.type === "CONTENT" && input.contentItemId) {

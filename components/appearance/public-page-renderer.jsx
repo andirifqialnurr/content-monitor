@@ -5,8 +5,8 @@ import { PublicProductLink } from "@/components/appearance/public-product-link";
 export function PublicPageRenderer({ publicPage, user, fallbackProducts = [] }) {
   const theme = parseTheme(publicPage?.themeJson);
   const blocks = publicPage?.blocks ?? [];
-  const visibleBlocks = blocks.filter((block) => block.isVisible);
-  const products = fallbackProducts.filter((product) => product.status === "ACTIVE");
+  const visibleBlocks = blocks.filter(isPublicBlockRenderable);
+  const products = fallbackProducts.filter(isPublicProductRenderable);
 
   return (
     <main className="min-h-screen px-4 py-8" style={{ backgroundColor: theme.backgroundColor, color: theme.textColor }}>
@@ -53,6 +53,26 @@ export function PublicPageRenderer({ publicPage, user, fallbackProducts = [] }) 
       </section>
     </main>
   );
+}
+
+function isPublicBlockRenderable(block) {
+  if (!block.isVisible) {
+    return false;
+  }
+
+  if (block.type === "PRODUCT") {
+    return Boolean(block.product && isPublicProductRenderable(block.product));
+  }
+
+  if (block.type === "CONTENT") {
+    return Boolean(block.contentItem?.slug && block.contentItem.status === "PUBLISHED");
+  }
+
+  return Boolean(block.url);
+}
+
+function isPublicProductRenderable(product) {
+  return product.status === "ACTIVE" && product.moderationStatus !== "DISABLED";
 }
 
 function getBlockHref(block, username) {

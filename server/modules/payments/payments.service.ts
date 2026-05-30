@@ -23,12 +23,22 @@ import {
 } from "@/server/modules/payments/payments.policy";
 import type { CheckoutProductInput } from "@/server/modules/payments/payments.schema";
 import type { GetPaymentOrderInput } from "@/server/modules/payments/payments.schema";
+import { assertRateLimit } from "@/server/shared/rate-limit";
+
+const checkoutRateLimitWindowMs = 10 * 60 * 1000;
 
 export async function startProductCheckout(
   prisma: PrismaClient,
   buyer: AuthUser,
   input: CheckoutProductInput,
 ) {
+  assertRateLimit({
+    key: `checkout:${buyer.id}`,
+    limit: 10,
+    windowMs: checkoutRateLimitWindowMs,
+    message: "Terlalu banyak percobaan checkout. Coba lagi nanti.",
+  });
+
   const product = assertCheckoutProduct(await findCheckoutProductById(prisma, input.productId), buyer.id);
   const buyerEmail = assertCheckoutBuyerEmail(buyer.email);
   await assertProductIsNotAlreadyOwned(prisma, buyer.id, product.id, product.type);

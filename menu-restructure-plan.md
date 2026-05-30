@@ -940,7 +940,6 @@ MVP course minimum:
 - Perlu keputusan kapan admin audit log mulai diwajibkan.
 - Perlu keputusan apakah admin bisa melakukan refund dari dashboard atau hanya monitoring dahulu.
 - Perlu follow-up dependency audit untuk vulnerability transitive pada Prisma/Next/NextAuth ketika versi patch yang aman tersedia tanpa downgrade/breaking change.
-- Perlu strategi migrasi data lama dari `Topic` dan `TimelineWeek` ke `ContentItem`.
 
 ## Langkah Teknis Berikutnya
 
@@ -1127,9 +1126,9 @@ Contoh penerapan:
 
 ## Todo List Implementasi
 
-### Progress Terakhir - 2026-05-28
+### Progress Terakhir - 2026-05-30
 
-Fokus sesi terakhir: memverifikasi Produk Dasar yang belum di-commit dan mulai Course Builder untuk module serta lesson.
+Fokus sesi terakhir: merapikan hardening upload policy, status CTA checkout publik, dan security baseline tanpa menambah integrasi payment baru.
 
 - Events sudah tidak lagi memakai tampilan timeline produksi lama.
 - Halaman `/events` sekarang fokus pada scheduler calendar.
@@ -1189,8 +1188,18 @@ Fokus sesi terakhir: memverifikasi Produk Dasar yang belum di-commit dan mulai C
 - Admin settings `/admin/settings` sudah menjadi form konfigurasi global untuk payment provider/mode, platform fee, upload policy, dan feature flags.
 - Platform settings tersimpan di model `PlatformSettings`, mutation admin tercatat ke audit log, dan checkout publik mengikuti mode settings sebelum memanggil provider payment.
 - Admin statistics `/admin/statistics` sudah menampilkan metric platform, trend 30 hari, distribusi status, top products, dan top creators memakai ApexCharts.
+- Upload file e-book sekarang membaca `maxUploadMb` dan `allowedMimeTypes` dari `PlatformSettings`, selain tetap memvalidasi ekstensi, MIME type, ukuran, dan magic bytes PDF.
+- CTA checkout publik sekarang membaca status checkout platform dari server page; tombol beli dinonaktifkan dengan pesan jelas ketika public checkout atau payment mode belum aktif.
+- Rate limiting baseline sudah ditambahkan untuk login, register, checkout, upload e-book, dan public analytics tracking.
+- Checklist abstraction payment provider dirapikan karena `payment-provider.ts` dan adapter Midtrans sudah tersedia.
+- Audit ownership check formal sudah dilakukan untuk resource user utama: `ContentItem`, `Product`, Course Builder, Appearance/PublicPageBlock, Learner enrollment, payment order, statistik user, dan file e-book private.
+- Update block Appearance sekarang memvalidasi ownership target berdasarkan tipe block efektif, sehingga `productId` atau `contentItemId` tidak bisa diganti ke resource user lain meski `type` tidak dikirim ulang.
+- Renderer halaman publik dan tracking block publik sekarang mengabaikan produk inactive/disabled dan konten yang belum `PUBLISHED`.
+- Migration `prisma/migrations/20260530001000_migrate_legacy_topics/` sudah menyalin data lama `Topic` ke `ContentItem` draft sebelum tabel legacy dihapus.
+- Seed sekarang membuat legacy topic sebagai `ContentItem` draft milik admin, bukan mengisi model `Topic`, `TimelineWeek`, dan tabel dashboard lama.
+- Komponen/helper dashboard lama `components/content-dashboard.jsx` dan `lib/content-data.js` sudah dihapus karena root app sudah memakai route dashboard baru.
 
-Lanjut berikutnya yang disarankan: rapikan flow public checkout agar membaca status settings pada UI CTA, atau lanjut ke hardening upload policy.
+Lanjut berikutnya yang disarankan: lanjutkan review open decision non-MVP seperti object storage, video upload, refund admin, dan dependency audit.
 
 ### 0. Architecture Guardrails
 
@@ -1209,10 +1218,10 @@ Lanjut berikutnya yang disarankan: rapikan flow public checkout agar membaca sta
 - [x] Buat shared component variant system untuk komponen reusable.
 - [x] Pastikan page hanya menyusun komponen, bukan menampung UI besar.
 - [x] Tambahkan validation schema untuk setiap tRPC mutation yang sudah dibuat.
-- [ ] Tambahkan ownership check untuk setiap resource user.
+- [x] Tambahkan ownership check untuk setiap resource user.
 - [x] Tambahkan admin role guard.
 - [x] Tambahkan enrollment guard untuk learner.
-- [ ] Siapkan abstraction untuk payment provider.
+- [x] Siapkan abstraction untuk payment provider.
 - [x] Siapkan abstraction untuk private file storage.
 
 ### 1. Struktur Route, Layout, dan Menu
@@ -1267,7 +1276,7 @@ Lanjut berikutnya yang disarankan: rapikan flow public checkout agar membaca sta
 - [x] Tambahkan `PublicPage`.
 - [x] Tambahkan relasi `userId` untuk data milik user.
 - [x] Pastikan query dashboard selalu filter berdasarkan `userId`.
-- [ ] Siapkan migrasi data lama dari `Topic` dan `TimelineWeek`.
+- [x] Siapkan migrasi data lama dari `Topic` dan `TimelineWeek`.
 
 ### 4. Events dan Bank Konten Dasar
 

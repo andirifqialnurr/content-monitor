@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 const privateStorageRoot = path.resolve(process.env.PRIVATE_STORAGE_ROOT ?? path.join(process.cwd(), "storage", "private"));
 const ebookMaxBytes = Number(process.env.EBOOK_FILE_MAX_BYTES ?? 25 * 1024 * 1024);
 const privateFileUrlPrefix = "private://";
+const pdfMimeType = "application/pdf";
 const pdfMagicBytes = Buffer.from("%PDF-");
 
 type PrivateProductFileParams = {
@@ -26,6 +27,11 @@ type PrivateFileMeta = {
   size: number;
 };
 
+type PrivateFileUploadPolicy = {
+  maxUploadBytes?: number;
+  allowedMimeTypes?: string[];
+};
+
 export type ReadPrivateFileResult = PrivateFileMeta & {
   content: ArrayBuffer;
 };
@@ -38,9 +44,15 @@ export function getPrivateProductStoragePrefix(params: PrivateProductFileParams)
   return `products/${params.userId}/${params.productId}/`;
 }
 
-export async function replacePrivateEbookFile(file: File, params: PrivateProductFileParams): Promise<StoredPrivateFile> {
+export async function replacePrivateEbookFile(
+  file: File,
+  params: PrivateProductFileParams,
+  policy: PrivateFileUploadPolicy = {},
+): Promise<StoredPrivateFile> {
   const originalName = sanitizeFileName(file.name || "ebook.pdf");
   const extension = path.extname(originalName).toLowerCase();
+  const maxBytes = policy.maxUploadBytes ?? ebookMaxBytes;
+  const allowedMimeTypes = normalizeMimeTypes(policy.allowedMimeTypes);
 
   if (extension !== ".pdf") {
     throw new TRPCError({
@@ -56,14 +68,21 @@ export async function replacePrivateEbookFile(file: File, params: PrivateProduct
     });
   }
 
-  if (file.size > ebookMaxBytes) {
+  if (file.size > maxBytes) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Ukuran file e-book maksimal ${formatBytes(ebookMaxBytes)}.`,
+      message: `Ukuran file e-book maksimal ${formatBytes(maxBytes)}.`,
     });
   }
 
-  if (file.type && file.type !== "application/pdf") {
+  if (!allowedMimeTypes.has(pdfMimeType)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Upload PDF sedang tidak diizinkan oleh upload policy.",
+    });
+  }
+
+  if (file.type && file.type.toLowerCase() !== pdfMimeType) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "MIME type file e-book harus application/pdf.",
@@ -90,7 +109,7 @@ export async function replacePrivateEbookFile(file: File, params: PrivateProduct
   const metaPath = `${filePath}.json`;
   const meta: PrivateFileMeta = {
     fileName: originalName,
-    mimeType: "application/pdf",
+    mimeType: pdfMimeType,
     size: content.byteLength,
   };
 
@@ -179,6 +198,12 @@ function sanitizeFileName(value: string) {
     .toLowerCase();
 
   return sanitized || fallback;
+}
+
+function normalizeMimeTypes(values?: string[]) {
+  const mimeTypes = values?.length ? values : [pdfMimeType];
+
+  return new Set(mimeTypes.map((value) => value.trim().toLowerCase()).filter(Boolean));
 }
 
 function formatBytes(value: number) {

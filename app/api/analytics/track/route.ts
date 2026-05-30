@@ -6,13 +6,23 @@ import { prisma } from "@/lib/prisma";
 import { trackPublicAnalyticsEvent } from "@/server/modules/analytics/analytics.service";
 import { trackPublicAnalyticsInputSchema } from "@/server/modules/analytics/analytics.schema";
 import { isAnalyticsTrackingEnabled } from "@/server/modules/platform-settings/platform-settings.service";
+import { assertRateLimit } from "@/server/shared/rate-limit";
 
 const visitorCookieName = "cm_visitor_id";
+const analyticsRateLimitWindowMs = 60 * 1000;
 
 export async function POST(request: NextRequest) {
   const visitorId = request.cookies.get(visitorCookieName)?.value ?? randomUUID();
+  const ipHash = hashIpAddress(getIpAddress(request));
 
   try {
+    assertRateLimit({
+      key: `analytics:${ipHash ?? visitorId}`,
+      limit: 120,
+      windowMs: analyticsRateLimitWindowMs,
+      message: "Terlalu banyak event tracking. Coba lagi nanti.",
+    });
+
     if (!(await isAnalyticsTrackingEnabled(prisma))) {
       return NextResponse.json({ ok: true, skipped: true });
     }
@@ -21,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     await trackPublicAnalyticsEvent(prisma, input, {
       visitorId,
-      ipHash: hashIpAddress(getIpAddress(request)),
+      ipHash,
       referrer: request.headers.get("referer"),
       userAgent: request.headers.get("user-agent"),
     });
@@ -86,6 +96,8 @@ function trpcCodeToHttpStatus(code: TRPCError["code"]) {
       return 404;
     case "CONFLICT":
       return 409;
+    case "TOO_MANY_REQUESTS":
+      return 429;
     default:
       return 500;
   }

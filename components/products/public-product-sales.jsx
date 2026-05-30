@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function PublicProductSales({ product }) {
+export function PublicProductSales({ product, checkoutAvailability = { enabled: true, disabledReason: null } }) {
   const isCourse = product.type === "COURSE";
   const lessons = product.modules.flatMap((module) => module.lessons);
   const totalMinutes = lessons.reduce((total, lesson) => total + (lesson.duration ?? 0), 0);
@@ -55,6 +55,7 @@ export function PublicProductSales({ product }) {
                 productId={product.id}
                 className="w-full"
                 analyticsMetadata={{ productType: product.type, slug: product.slug }}
+                disabledReason={checkoutAvailability.enabled ? null : checkoutAvailability.disabledReason}
               >
                 Beli {isCourse ? "course" : "e-book"}
               </CheckoutButton>

@@ -143,6 +143,19 @@ Checklist wajib:
 - Tambahkan rate limiting untuk auth, checkout, tracking publik, dan mutation sensitif.
 - Error message tidak boleh membocorkan detail internal.
 
+## Ownership Audit
+
+Status audit 2026-05-30:
+
+- Dashboard content/product mutation memakai `ctx.user.id` dari `protectedProcedure`, bukan `userId` dari client.
+- `ContentItem`, `Product`, Course Builder, dan Appearance/PublicPageBlock memiliki policy ownership sebelum update/delete.
+- Update block Appearance wajib memvalidasi target produk/konten berdasarkan tipe block efektif, termasuk saat `type` tidak dikirim ulang.
+- Learner route memakai enrollment guard sebelum membuka lesson, progress, atau quiz attempt.
+- Payment order hanya bisa dibaca buyer atau creator terkait.
+- File e-book private hanya bisa dibuka owner produk atau buyer dengan order `PAID`.
+- Statistik user difilter berdasarkan owner/creator `userId`.
+- Public page dan analytics tracking hanya merender/mencatat target publik yang masih aktif: produk `ACTIVE` non-disabled dan konten `PUBLISHED`.
+
 ## SOLID Guard
 
 Penerapan:
@@ -186,5 +199,5 @@ Hal yang tetap perlu review manual:
 - Kualitas SOLID.
 - Kualitas pemecahan component.
 - Security flow.
-- Ownership check di tiap endpoint.
+- Ownership check untuk endpoint baru setelah audit 2026-05-30.
 - Validasi payment webhook.

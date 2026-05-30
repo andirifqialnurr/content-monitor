@@ -97,6 +97,8 @@ function trpcCodeToHttpStatus(code: TRPCError["code"]) {
       return 404;
     case "CONFLICT":
       return 409;
+    case "TOO_MANY_REQUESTS":
+      return 429;
     default:
       return 500;
   }

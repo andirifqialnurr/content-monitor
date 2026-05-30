@@ -3,7 +3,7 @@ require("dotenv/config");
 const { randomBytes, scryptSync } = require("node:crypto");
 const { PrismaClient } = require("@prisma/client");
 const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
-const { cadence, files, formats, timeline, topics, weeklyCalendar } = require("../data/content");
+const { timeline, topics } = require("../data/content");
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -28,69 +28,7 @@ async function main() {
   const adminName = process.env.ADMIN_NAME ?? "Platform Admin";
 
   await prisma.$transaction(async (tx) => {
-    await tx.timelineWeek.deleteMany();
-    await tx.topicFolder.deleteMany();
-    await tx.topic.deleteMany();
-    await tx.contentFormat.deleteMany();
-    await tx.weeklyCalendarItem.deleteMany();
-    await tx.cadenceItem.deleteMany();
-    await tx.referenceFile.deleteMany();
-
-    await tx.referenceFile.createMany({
-      data: files.map((file, index) => ({
-        ...file,
-        order: index + 1,
-      })),
-    });
-
-    await tx.cadenceItem.createMany({
-      data: Object.entries(cadence).flatMap(([mode, items]) =>
-        items.map(([label, value], index) => ({
-          mode,
-          label,
-          value,
-          order: index + 1,
-        })),
-      ),
-    });
-
-    await tx.weeklyCalendarItem.createMany({
-      data: weeklyCalendar.map(([day, item], index) => ({
-        day,
-        item,
-        order: index + 1,
-      })),
-    });
-
-    await tx.contentFormat.createMany({
-      data: formats.map((format, index) => ({
-        ...format,
-        order: index + 1,
-      })),
-    });
-
-    await tx.topic.createMany({
-      data: topics.map(({ folders: _folders, linkedin, ...topic }) => ({
-        ...topic,
-        linkedin: linkedin ?? null,
-      })),
-    });
-
-    const folderRows = topics.flatMap((topic) =>
-      (topic.folders ?? []).map((folder, index) => ({
-        topicId: topic.id,
-        value: folder,
-        order: index + 1,
-      })),
-    );
-
-    if (folderRows.length > 0) {
-      await tx.topicFolder.createMany({ data: folderRows });
-    }
-
-    await tx.timelineWeek.createMany({ data: timeline });
-
-    await tx.user.upsert({
+    const admin = await tx.user.upsert({
       where: { email: adminEmail },
       update: {
         name: adminName,
@@ -105,7 +43,94 @@ async function main() {
         passwordHash: hashPassword(adminPassword),
       },
     });
+
+    await tx.contentItem.deleteMany({
+      where: {
+        userId: admin.id,
+        metadataJson: {
+          contains: '"source":"legacy-topic"',
+        },
+      },
+    });
+
+    await tx.contentItem.createMany({
+      data: buildLegacyContentItems(admin.id),
+    });
   });
+}
+
+function buildLegacyContentItems(userId) {
+  const now = new Date();
+  const timelineByTopic = new Map(timeline.map((item) => [item.topicId, item]));
+
+  return topics.flatMap((topic) => {
+    const week = timelineByTopic.get(topic.id);
+
+    return [
+      buildLegacyContentItem(userId, topic, week, "CAROUSEL_POST", topic.carousel, "carousel", now),
+      buildLegacyContentItem(userId, topic, week, "VIDEO_SHORT", topic.short, "short", now),
+      buildLegacyContentItem(userId, topic, week, "BLOG", topic.article, "article", now),
+    ];
+  });
+}
+
+function buildLegacyContentItem(userId, topic, week, type, title, format, now) {
+  return {
+    id: `legacy-topic-${topic.id.toLowerCase()}-${format}`,
+    userId,
+    type,
+    title,
+    slug: normalizeSlug(`${topic.id}-${format}-${title}`),
+    body: buildLegacyBody(topic, week, format),
+    metadataJson: JSON.stringify({
+      source: "legacy-topic",
+      topicId: topic.id,
+      cluster: topic.cluster,
+      pillar: topic.pillar,
+      format,
+      timelineWeek: week?.week ?? null,
+    }),
+    status: "DRAFT",
+    timezone: "Asia/Jakarta",
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function buildLegacyBody(topic, week, format) {
+  const lines = [
+    `Legacy topic: ${topic.id}`,
+    `Pillar: ${topic.pillar}`,
+    `Cluster: ${topic.cluster}`,
+    `Format: ${format}`,
+    "",
+    `Pain: ${topic.pain}`,
+    `Promise: ${topic.promise}`,
+    `CTA: ${topic.cta}`,
+  ];
+
+  if (week) {
+    lines.push("", `Timeline week ${week.week}: ${week.theme}`);
+  }
+
+  if (topic.folders?.length) {
+    lines.push("", `Folder references: ${topic.folders.join(", ")}`);
+  }
+
+  if (topic.linkedin) {
+    lines.push("", `LinkedIn angle: ${topic.linkedin}`);
+  }
+
+  return lines.join("\n");
+}
+
+function normalizeSlug(value) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
 }
 
 main()

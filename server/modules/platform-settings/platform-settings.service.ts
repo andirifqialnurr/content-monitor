@@ -24,6 +24,46 @@ export async function getPlatformPaymentSettings(prisma: PrismaClient) {
   };
 }
 
+export async function getPublicCheckoutAvailability(prisma: PrismaClient) {
+  const settings = await getPlatformPaymentSettings(prisma);
+
+  if (!settings.publicCheckoutEnabled) {
+    return {
+      enabled: false,
+      disabledReason: "Checkout publik sedang dinonaktifkan oleh admin.",
+    };
+  }
+
+  if (settings.paymentMode === "DISABLED") {
+    return {
+      enabled: false,
+      disabledReason: "Checkout publik belum aktif.",
+    };
+  }
+
+  if (settings.paymentProvider !== "MIDTRANS") {
+    return {
+      enabled: false,
+      disabledReason: "Provider payment belum didukung untuk checkout publik.",
+    };
+  }
+
+  return {
+    enabled: true,
+    disabledReason: null,
+  };
+}
+
+export async function getPlatformUploadPolicy(prisma: PrismaClient) {
+  const settings = await getPlatformSettings(prisma);
+
+  return {
+    maxUploadMb: settings.maxUploadMb,
+    maxUploadBytes: settings.maxUploadMb * 1024 * 1024,
+    allowedMimeTypes: settings.allowedMimeTypes,
+  };
+}
+
 export async function isAnalyticsTrackingEnabled(prisma: PrismaClient) {
   const settings = await getPlatformSettings(prisma);
 
