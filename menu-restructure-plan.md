@@ -929,34 +929,28 @@ MVP course minimum:
 
 ## Risiko dan Keputusan yang Masih Terbuka
 
-- Provider payment final belum dipilih: Midtrans atau Xendit.
-- Perlu keputusan apakah file digital disimpan lokal, S3-compatible storage, Cloudinary, atau provider lain.
+- Keputusan payment MVP: gunakan Midtrans sebagai provider utama. Xendit ditunda sebagai adapter tambahan jika kebutuhan invoice/payment link, subscription, payout, atau ekspansi lintas negara mulai relevan.
+- Keputusan storage MVP/testing: gunakan local private storage di folder khusus upload `storage/private` melalui `PRIVATE_STORAGE_ROOT`. Folder `storage` tetap di-ignore dari git dan file dibuat otomatis saat upload.
+- Arah storage production: siapkan migrasi ke S3-compatible object storage. Interface storage harus tetap dipertahankan agar pemindahan dari lokal ke S3 tidak mengubah flow produk, order, atau authorization.
 - Perlu keputusan apakah public page memakai custom domain di fase awal atau nanti.
-- Perlu keputusan apakah file produk disimpan lokal untuk MVP atau langsung memakai object storage.
-- Perlu keputusan apakah course video hanya link/embed dulu atau sudah upload dan lesson player lengkap.
+- Perlu keputusan apakah course video hanya link/embed dulu atau sudah upload dan lesson player lengkap. Jika upload video masuk scope, implementasi harus mengikuti interface storage yang sama dan diarahkan ke S3-compatible storage untuk production.
 - Perlu keputusan apakah quiz MVP cukup pilihan ganda dan jawaban singkat, atau perlu tipe soal lain.
 - Perlu keputusan apakah sertifikat course masuk MVP atau fase lanjutan.
-- Perlu strategi akses file agar e-book dan materi course tidak bisa dibuka tanpa enrollment/order paid.
-- Perlu keputusan kapan admin audit log mulai diwajibkan.
-- Perlu keputusan apakah admin bisa melakukan refund dari dashboard atau hanya monitoring dahulu.
+- Keputusan akses file private: e-book dan materi private wajib lewat endpoint authorization, bukan URL publik langsung. Akses dibuka hanya untuk owner atau buyer/enrollment yang valid.
+- Keputusan admin audit log: semua aksi admin yang mengubah status user, produk/course, order/payment, atau setting platform wajib tercatat di audit log.
+- Keputusan refund admin: untuk MVP admin hanya monitoring dan investigasi. Refund dilakukan manual dari dashboard provider Midtrans terlebih dahulu. Tombol refund di aplikasi ditunda sampai contract `paymentProvider.refund`, idempotency key, audit log wajib, role guard, konfirmasi berlapis, dan sinkronisasi status order sudah tersedia.
 - Perlu follow-up dependency audit untuk vulnerability transitive pada Prisma/Next/NextAuth ketika versi patch yang aman tersedia tanpa downgrade/breaking change.
 
 ## Langkah Teknis Berikutnya
 
-Langkah implementasi pertama yang disarankan:
+Checklist MVP utama sudah selesai. Langkah berikutnya berpindah dari pembangunan fitur besar ke stabilisasi, hardening, dan keputusan production-readiness:
 
-1. Buat route group `(dashboard)` dan layout dashboard.
-2. Pindahkan sidebar dari `ContentDashboard` menjadi komponen reusable.
-3. Buat menu sesuai struktur baru.
-4. Pecah `TimelineView` lama ke halaman `events`.
-5. Ubah `TopicView` lama menjadi halaman awal `bank-konten` atau migrasikan menjadi placeholder Bank Konten.
-6. Tambahkan placeholder untuk Produk, Appearance, Statistics, Payment, dan Account.
-7. Tambahkan placeholder Learner Area `/learn`.
-8. Tambahkan placeholder Admin Area `/admin`.
-9. Setelah struktur UI stabil, masuk ke auth dan schema database baru.
-10. Implementasikan role guard untuk `ADMIN` dan `USER`.
-11. Implementasikan Product dan Course schema sebelum payment.
-12. Implementasikan Enrollment dan Quiz sebelum statistik course.
+1. Jalankan smoke test end-to-end untuk auth, checkout, webhook, e-book download, enrollment, learner progress, quiz, ownership, dan admin moderation.
+2. Jalankan dependency/security audit dan catat dependency yang perlu upgrade tanpa downgrade atau breaking change.
+3. Rapikan dokumentasi environment untuk Midtrans dan local private storage.
+4. Siapkan backlog storage adapter S3-compatible tanpa mengubah contract akses file private yang sudah ada.
+5. Siapkan backlog refund admin sebagai fase lanjutan, bukan MVP: provider refund adapter, audit log, idempotency, guard admin, konfirmasi, dan status sync.
+6. Review area upload course/video setelah storage strategy production disetujui.
 
 ## Standar Arsitektur dan Kualitas Kode
 
@@ -1199,7 +1193,22 @@ Fokus sesi terakhir: merapikan hardening upload policy, status CTA checkout publ
 - Seed sekarang membuat legacy topic sebagai `ContentItem` draft milik admin, bukan mengisi model `Topic`, `TimelineWeek`, dan tabel dashboard lama.
 - Komponen/helper dashboard lama `components/content-dashboard.jsx` dan `lib/content-data.js` sudah dihapus karena root app sudah memakai route dashboard baru.
 
-Lanjut berikutnya yang disarankan: lanjutkan review open decision non-MVP seperti object storage, video upload, refund admin, dan dependency audit.
+Keputusan terbaru 2026-05-31:
+
+- Payment MVP memakai Midtrans.
+- Storage upload saat testing tetap lokal di `storage/private`; production diarahkan ke S3-compatible object storage melalui abstraction storage.
+- Refund admin tidak masuk MVP. Admin cukup monitoring/investigasi, sementara refund dilakukan manual dari Midtrans sampai flow refund aplikasi punya audit log, idempotency, guard admin, dan sinkronisasi status yang kuat.
+
+Verifikasi dan audit 2026-05-31:
+
+- `npm run guardrails` lulus.
+- `npm run typecheck` lulus.
+- `npm run build` lulus.
+- `npm audit` awal menemukan 7 moderate vulnerability. Safe override sudah diterapkan untuk `@hono/node-server` dan nested `postcss` milik Next, sehingga sisa audit turun menjadi 2 moderate vulnerability.
+- Sisa vulnerability berasal dari `next-auth@4.24.14` yang masih membawa `uuid@8.3.2`. `next-auth` terbaru di npm masih `4.24.14`, dan `npm audit fix --force` menyarankan downgrade/breaking change, jadi tidak dijalankan.
+- Script `npm run lint` masih memakai `next lint`, yang deprecated dan memicu setup ESLint interaktif. Perlu migrasi terpisah ke ESLint CLI.
+
+Lanjut berikutnya yang disarankan: smoke test manual end-to-end pada browser, migrasi script lint ke ESLint CLI, dan monitor jalur upgrade Auth.js/NextAuth agar sisa advisory `uuid` bisa ditutup tanpa breaking change.
 
 ### 0. Architecture Guardrails
 

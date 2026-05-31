@@ -23,6 +23,12 @@
   "prisma": {
     "seed": "node prisma/seed.js"
   },
+  "overrides": {
+    "@hono/node-server": "^1.19.13",
+    "next": {
+      "postcss": "8.5.10"
+    }
+  },
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",
     "@fullcalendar/daygrid": "^6.1.20",
