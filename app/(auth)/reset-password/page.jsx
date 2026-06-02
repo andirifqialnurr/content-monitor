@@ -1,14 +1,12 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { Suspense } from "react";
+import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 
 export default function ResetPasswordPage() {
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <ModulePlaceholder
-        eyebrow="Auth"
-        title="Reset Password"
-        description="Placeholder form password baru setelah token reset divalidasi."
-        items={["Token validation", "New password", "Confirm password", "Session invalidation"]}
-      />
+    <main className="grid min-h-screen place-items-center bg-background p-4">
+      <Suspense fallback={null}>
+        <ResetPasswordForm />
+      </Suspense>
     </main>
   );
 }

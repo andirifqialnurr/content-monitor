@@ -1,14 +1,9 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
+import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 
 export default function ForgotPasswordPage() {
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <ModulePlaceholder
-        eyebrow="Auth"
-        title="Forgot Password"
-        description="Placeholder flow reset password via email."
-        items={["Email input", "Reset token", "Expiry", "Rate limiting"]}
-      />
+    <main className="grid min-h-screen place-items-center bg-background p-4">
+      <ForgotPasswordForm />
     </main>
   );
 }

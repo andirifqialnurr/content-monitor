@@ -104,9 +104,97 @@ export function findOrderForUser(prisma: PrismaClient, orderId: string, userId: 
       transactions: {
         orderBy: { createdAt: "desc" },
         take: 5,
+        select: {
+          id: true,
+          provider: true,
+          providerReference: true,
+          status: true,
+          createdAt: true,
+        },
       },
     },
   });
+}
+
+export async function getPaymentDashboardData(prisma: PrismaClient, userId: string) {
+  const orderInclude = {
+    buyer: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        username: true,
+      },
+    },
+    creator: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        username: true,
+      },
+    },
+    enrollment: {
+      select: {
+        id: true,
+        status: true,
+      },
+    },
+    product: {
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        slug: true,
+        currency: true,
+      },
+    },
+    transactions: {
+      orderBy: { createdAt: "desc" as const },
+      take: 1,
+      select: {
+        id: true,
+        provider: true,
+        providerReference: true,
+        status: true,
+        createdAt: true,
+      },
+    },
+  };
+
+  const [salesOrders, purchaseOrders, salesStatus, purchaseStatus] = await Promise.all([
+    prisma.order.findMany({
+      where: { creatorUserId: userId },
+      include: orderInclude,
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    prisma.order.findMany({
+      where: { buyerUserId: userId },
+      include: orderInclude,
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    prisma.order.groupBy({
+      by: ["status"],
+      where: { creatorUserId: userId },
+      _count: { _all: true },
+      _sum: { amount: true },
+    }),
+    prisma.order.groupBy({
+      by: ["status"],
+      where: { buyerUserId: userId },
+      _count: { _all: true },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  return {
+    salesOrders,
+    purchaseOrders,
+    salesStatus,
+    purchaseStatus,
+  };
 }
 
 export function createPendingOrder(prisma: PrismaClient, params: CreatePendingOrderParams) {

@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const courseLessonTypeSchema = z.enum(["READING", "VIDEO"]);
 
+const courseEntityIdSchema = z.string().trim().min(1).max(128);
+
 const nullableTextSchema = z
   .union([z.string().max(50000), z.null()])
   .optional()
@@ -54,27 +56,27 @@ const nullableDurationSchema = z
   .optional();
 
 export const createCourseModuleInputSchema = z.object({
-  productId: z.string().cuid(),
+  productId: courseEntityIdSchema,
   title: z.string().trim().min(2).max(160),
 });
 
 export const updateCourseModuleInputSchema = z.object({
-  id: z.string().cuid(),
+  id: courseEntityIdSchema,
   title: z.string().trim().min(2).max(160),
 });
 
 export const deleteCourseModuleInputSchema = z.object({
-  id: z.string().cuid(),
+  id: courseEntityIdSchema,
 });
 
 export const createCourseLessonInputSchema = z.object({
-  moduleId: z.string().cuid(),
+  moduleId: courseEntityIdSchema,
   title: z.string().trim().min(2).max(160),
   type: courseLessonTypeSchema.default("READING"),
 });
 
 export const updateCourseLessonInputSchema = z.object({
-  id: z.string().cuid(),
+  id: courseEntityIdSchema,
   title: z.string().trim().min(2).max(160).optional(),
   type: courseLessonTypeSchema.optional(),
   body: nullableTextSchema,
@@ -85,7 +87,7 @@ export const updateCourseLessonInputSchema = z.object({
 });
 
 export const deleteCourseLessonInputSchema = z.object({
-  id: z.string().cuid(),
+  id: courseEntityIdSchema,
 });
 
 export type CreateCourseModuleInput = z.infer<typeof createCourseModuleInputSchema>;

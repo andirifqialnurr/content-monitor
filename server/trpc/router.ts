@@ -1,4 +1,5 @@
 import { createTRPCRouter } from "@/server/trpc/root";
+import { accountRouter } from "@/server/modules/account/account.router";
 import { adminRouter } from "@/server/modules/admin/admin.router";
 import { appearanceRouter } from "@/server/modules/appearance/appearance.router";
 import { authRouter } from "@/server/modules/auth/auth.router";
@@ -10,6 +11,7 @@ import { paymentsRouter } from "@/server/modules/payments/payments.router";
 import { productsRouter } from "@/server/modules/products/products.router";
 
 export const appRouter = createTRPCRouter({
+  account: accountRouter,
   admin: adminRouter,
   appearance: appearanceRouter,
   auth: authRouter,

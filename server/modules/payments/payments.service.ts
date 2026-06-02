@@ -14,6 +14,7 @@ import {
   findActiveEnrollment,
   findCheckoutProductById,
   findOrderForUser,
+  getPaymentDashboardData,
   findPaidProductOrder,
   updateOrderStatus,
 } from "@/server/modules/payments/payments.repository";
@@ -119,6 +120,21 @@ export async function getPaymentOrder(
   return order;
 }
 
+export async function getUserPaymentDashboard(prisma: PrismaClient, userId: string) {
+  const data = await getPaymentDashboardData(prisma, userId);
+
+  return {
+    sales: {
+      summary: buildStatusSummary(data.salesStatus),
+      orders: data.salesOrders,
+    },
+    purchases: {
+      summary: buildStatusSummary(data.purchaseStatus),
+      orders: data.purchaseOrders,
+    },
+  };
+}
+
 export async function handlePaymentWebhook(prisma: PrismaClient, payload: unknown) {
   const paymentSettings = await getPlatformPaymentSettings(prisma);
   const provider = createPaymentProviderAdapter(paymentSettings.paymentProvider, {
@@ -169,6 +185,51 @@ function assertPublicCheckoutEnabled(settings: Awaited<ReturnType<typeof getPlat
 
 function getAppBaseUrl() {
   return (process.env.NEXTAUTH_URL ?? "http://127.0.0.1:4000").replace(/\/+$/, "");
+}
+
+function buildStatusSummary(
+  rows: Array<{
+    status: string;
+    _count: { _all: number };
+    _sum: { amount: number | null };
+  }>,
+) {
+  const summary = {
+    total: 0,
+    revenue: 0,
+    pending: 0,
+    paid: 0,
+    failed: 0,
+    expired: 0,
+    refunded: 0,
+  };
+
+  for (const row of rows) {
+    summary.total += row._count._all;
+
+    if (row.status === "PAID") {
+      summary.revenue += row._sum.amount ?? 0;
+      summary.paid = row._count._all;
+    }
+
+    if (row.status === "PENDING") {
+      summary.pending = row._count._all;
+    }
+
+    if (row.status === "FAILED") {
+      summary.failed = row._count._all;
+    }
+
+    if (row.status === "EXPIRED") {
+      summary.expired = row._count._all;
+    }
+
+    if (row.status === "REFUNDED") {
+      summary.refunded = row._count._all;
+    }
+  }
+
+  return summary;
 }
 
 async function assertProductIsNotAlreadyOwned(

@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { CreditCard, KeyRound, Save, ShieldCheck, Upload } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +21,6 @@ const paymentModes = [
 ];
 
 export function AdminSettingsForm({ settings, environment }) {
-  const router = useRouter();
   const [form, setForm] = useState(() => ({
     ...settings,
     allowedMimeTypesText: settings.allowedMimeTypes.join("\n"),
@@ -35,7 +33,6 @@ export function AdminSettingsForm({ settings, environment }) {
         ...updatedSettings,
         allowedMimeTypesText: updatedSettings.allowedMimeTypes.join("\n"),
       });
-      router.refresh();
     },
   });
 

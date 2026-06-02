@@ -18,7 +18,9 @@
     "guardrails": "node scripts/check-guardrails.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "next start --hostname 127.0.0.1 --port 4000",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "smoke:auth": "node scripts/smoke-authenticated.mjs",
+    "test:ui": "node scripts/ui-regression.mjs"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
@@ -63,12 +65,17 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@types/node": "^25.9.0",
     "autoprefixer": "^10.5.0",
     "dotenv": "^17.4.2",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^15.5.0",
+    "playwright": "^1.60.0",
     "postcss": "^8.5.14",
     "prisma": "^7.8.0",
     "tailwindcss": "3.4.17",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^6.0.3"
   }
 }

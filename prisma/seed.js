@@ -4,6 +4,7 @@ const { randomBytes, scryptSync } = require("node:crypto");
 const { PrismaClient } = require("@prisma/client");
 const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
 const { timeline, topics } = require("../data/content");
+const { seedQaScenario } = require("../data/qa-seed");
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -55,6 +56,12 @@ async function main() {
 
     await tx.contentItem.createMany({
       data: buildLegacyContentItems(admin.id),
+    });
+
+    await seedQaScenario({
+      tx,
+      admin,
+      hashPassword,
     });
   });
 }
@@ -137,6 +144,9 @@ main()
   .then(async () => {
     console.log("Seeded content monitor data.");
     console.log("Admin login:", process.env.ADMIN_EMAIL ?? "admin@content-monitor.local");
+    console.log("QA creator login: creator@content-monitor.local / CreatorPassword123!");
+    console.log("QA buyer login: buyer@content-monitor.local / BuyerPassword123!");
+    console.log("QA partner login: partner@content-monitor.local / PartnerPassword123!");
     await prisma.$disconnect();
   })
   .catch(async (error) => {

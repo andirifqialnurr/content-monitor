@@ -1,11 +1,13 @@
 import { z } from "zod";
 
+const paymentEntityIdSchema = z.string().trim().min(1).max(128);
+
 export const checkoutProductInputSchema = z.object({
-  productId: z.string().cuid(),
+  productId: paymentEntityIdSchema,
 });
 
 export const getPaymentOrderInputSchema = z.object({
-  orderId: z.string().cuid(),
+  orderId: paymentEntityIdSchema,
 });
 
 export type CheckoutProductInput = z.infer<typeof checkoutProductInputSchema>;

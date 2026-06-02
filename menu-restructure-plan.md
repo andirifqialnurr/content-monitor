@@ -1208,7 +1208,71 @@ Verifikasi dan audit 2026-05-31:
 - Sisa vulnerability berasal dari `next-auth@4.24.14` yang masih membawa `uuid@8.3.2`. `next-auth` terbaru di npm masih `4.24.14`, dan `npm audit fix --force` menyarankan downgrade/breaking change, jadi tidak dijalankan.
 - Script `npm run lint` masih memakai `next lint`, yang deprecated dan memicu setup ESLint interaktif. Perlu migrasi terpisah ke ESLint CLI.
 
-Lanjut berikutnya yang disarankan: smoke test manual end-to-end pada browser, migrasi script lint ke ESLint CLI, dan monitor jalur upgrade Auth.js/NextAuth agar sisa advisory `uuid` bisa ditutup tanpa breaking change.
+Progress terbaru - 2026-06-01:
+
+- Script `npm run lint` sudah dimigrasikan dari `next lint` ke ESLint CLI melalui `eslint.config.mjs`.
+- Dependency dev `eslint`, `eslint-config-next@15`, dan `@eslint/eslintrc` sudah ditambahkan.
+- Error lint lama di `courses.service.ts` sudah dibereskan dengan mengganti variabel lokal `module` menjadi `courseModule`.
+- Halaman `/account` sudah tidak lagi placeholder.
+- Modul account tRPC sudah ditambahkan dengan query profile, update profile, dan ganti password.
+- Update profile memvalidasi username, menyinkronkan username/display name/bio ke `PublicPage`, dan tetap memakai user dari session.
+- Ganti password memvalidasi password saat ini, hash password baru, dan rate limit percobaan.
+- Flow forgot/reset password sudah ditambahkan.
+- Model `PasswordResetToken` dan migration `20260601000000_add_password_reset_tokens` sudah tersedia.
+- Token reset disimpan hashed, memiliki expiry, dan ditandai used setelah berhasil reset.
+- Response forgot password tetap generik; reset link hanya ditampilkan di development/local untuk smoke test karena email sender belum masuk scope.
+- Reset password production sekarang bisa mengirim email melalui webhook HTTP `RESET_EMAIL_WEBHOOK_URL` tanpa menambah dependency SMTP rentan.
+- Webhook reset email menerima payload `{ from, to, subject, text, html }`, optional bearer token, dan timeout env.
+- Halaman `/forgot-password` dan `/reset-password` sudah diganti dari placeholder menjadi form aktif.
+- Halaman `/payment` sudah tidak lagi placeholder.
+- Payment dashboard user sudah menampilkan ringkasan penjualan/pembelian, order terbaru, status transaksi, dan aksi download e-book atau buka course untuk order paid.
+- Script `npm run smoke:auth` sudah ditambahkan untuk smoke authenticated berbasis HTTP/tRPC.
+- Smoke authenticated membuat user smoke lokal, menjalankan `next start` sementara, login via NextAuth credentials, cek protected `/account`, query/mutation account, query payment dashboard, forgot/reset password, lalu restore password smoke user.
+- Seed QA end-to-end sudah ditambahkan melalui `data/qa-seed.js` dan dipanggil dari `prisma/seed.js`.
+- Seed QA mencakup akun creator, buyer, partner creator, inactive user, semua tipe konten, calendar events, produk e-book/course, course modules/lessons/resources/quizzes, public pages, payment orders, transactions, enrollments, progress, quiz attempt, analytics, platform settings, dan admin audit logs.
+- Dokumen skenario lengkap semua menu sudah dibuat di `docs/qa-scenarios.md`.
+- README sudah diperbarui agar sesuai aplikasi saat ini, termasuk env Midtrans, private storage lokal, payment flow, reset password, dan quality gate.
+
+Verifikasi 2026-06-01:
+
+- `npm run db:generate` lulus.
+- `npm run db:deploy` lulus dan menerapkan migration password reset token ke SQLite lokal.
+- `npm run guardrails` lulus.
+- `npm run lint` lulus memakai ESLint CLI.
+- `npm run typecheck` lulus.
+- `npm run build` lulus.
+- `npm run db:seed` lulus dengan data QA end-to-end.
+- Smoke HTTP production server sementara lulus untuk `/login`, `/forgot-password`, `/reset-password?token=...`, dan `/register`.
+- Protected route `/account` mengembalikan redirect guest `307`.
+- Smoke tRPC publik lulus untuk `health.status` dan `auth.forgotPassword`.
+- `npm run smoke:auth` lulus.
+- `npm audit --audit-level=moderate` masih menyisakan 2 moderate vulnerability dari `next-auth@4.24.14` yang membawa `uuid@8.3.2`; `npm audit fix --force` tetap tidak dijalankan karena menyarankan downgrade breaking ke `next-auth@3.29.10`.
+
+Lanjut berikutnya yang disarankan: tambahkan provider/worker nyata di belakang `RESET_EMAIL_WEBHOOK_URL`, tambah test otomatis untuk ownership/payment/account flow, jalankan smoke checkout Midtrans sandbox saat credential siap, dan monitor jalur upgrade Auth.js/NextAuth agar sisa advisory `uuid` bisa ditutup tanpa breaking change.
+
+Progress terbaru - 2026-06-02:
+
+- `npm run test:ui` sudah menjalankan regression UI empat fase: Auth/Account/Public Route, Events/Bank Konten, Produk/Course/Appearance/Payment/Learner/Statistics, dan Admin Menu/Filter/Moderation/Settings.
+- Script UI regression dibuat lebih deterministik dan idempotent untuk flow berulang: cleanup artifact `QA UI`, reset progress lesson buyer seed, dan hapus quiz attempt tambahan non-seed.
+- Schema validasi ID resource domain tidak lagi memaksa `cuid()` untuk data seed QA stabil seperti `qa-product-*`, `qa-order-*`, `qa-lesson-*`, dan `qa-block-*`; validasi sekarang memakai string ID non-kosong dengan batas panjang.
+- Public analytics tracking sudah menerima ID seed QA stabil sehingga page view/click publik tidak menghasilkan request 400 saat testing.
+- Payload transaksi payment yang dikirim ke dashboard user/admin sekarang hanya memilih field yang dibutuhkan UI, bukan `rawPayloadJson` provider.
+- Form detail produk internal dibuat controlled untuk memastikan update metadata produk, termasuk judul, terkirim deterministik dari UI.
+- Tombol aksi block Appearance sekarang memiliki `aria-label` untuk edit, pindah naik/turun, dan hapus, sehingga aksesibilitas dan regression selector lebih kuat.
+- Platform settings admin tidak lagi mengirim field turunan `allowedMimeTypes` ke Prisma; hanya `allowedMimeTypesJson` yang disimpan.
+- Feedback simpan settings admin dipertahankan di client setelah mutation sukses.
+- Payment dashboard order item diberi wrapper semantik `article` untuk memudahkan scanning dan testing row order.
+
+Verifikasi 2026-06-02:
+
+- `npm run db:generate` lulus.
+- `npm run db:deploy` lulus; tidak ada pending migration.
+- `npm run guardrails` lulus.
+- `npm run lint` lulus.
+- `npm run typecheck` lulus.
+- `npm run build` lulus.
+- `npm run smoke:auth` lulus.
+- `npm run test:ui` lulus untuk 4 fase regression UI end-to-end.
 
 ### 0. Architecture Guardrails
 

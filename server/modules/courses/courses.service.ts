@@ -40,8 +40,8 @@ export async function addCourseModule(prisma: PrismaClient, userId: string, inpu
 }
 
 export async function editCourseModule(prisma: PrismaClient, userId: string, input: UpdateCourseModuleInput) {
-  const module = await findCourseModuleById(prisma, input.id);
-  assertCourseModuleOwner(module, userId);
+  const courseModule = await findCourseModuleById(prisma, input.id);
+  assertCourseModuleOwner(courseModule, userId);
 
   return updateCourseModule(prisma, {
     id: input.id,
@@ -50,8 +50,8 @@ export async function editCourseModule(prisma: PrismaClient, userId: string, inp
 }
 
 export async function removeCourseModule(prisma: PrismaClient, userId: string, input: DeleteCourseModuleInput) {
-  const module = await findCourseModuleById(prisma, input.id);
-  assertCourseModuleOwner(module, userId);
+  const courseModule = await findCourseModuleById(prisma, input.id);
+  assertCourseModuleOwner(courseModule, userId);
 
   await deleteCourseModule(prisma, input.id);
 
@@ -59,8 +59,8 @@ export async function removeCourseModule(prisma: PrismaClient, userId: string, i
 }
 
 export async function addCourseLesson(prisma: PrismaClient, userId: string, input: CreateCourseLessonInput) {
-  const module = await findCourseModuleById(prisma, input.moduleId);
-  assertCourseModuleOwner(module, userId);
+  const courseModule = await findCourseModuleById(prisma, input.moduleId);
+  assertCourseModuleOwner(courseModule, userId);
 
   const order = await getNextCourseLessonOrder(prisma, input.moduleId);
 

@@ -87,9 +87,10 @@ export async function updatePlatformSettings(
   input: UpdatePlatformSettingsInput,
 ) {
   const previous = await getPlatformSettings(prisma);
+  const { allowedMimeTypes, ...settingsInput } = input;
   const updated = await updatePlatformSettingsRecord(prisma, {
-    ...input,
-    allowedMimeTypesJson: JSON.stringify(input.allowedMimeTypes),
+    ...settingsInput,
+    allowedMimeTypesJson: JSON.stringify(allowedMimeTypes),
     updatedByUserId: actorUserId,
   });
   const next = serializePlatformSettings(updated);

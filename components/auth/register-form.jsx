@@ -1,6 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,9 @@ export function RegisterForm() {
           <Button type="submit" disabled={registerMutation.isPending}>
             {registerMutation.isPending ? "Memproses..." : "Register"}
           </Button>
+          <Link className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline" href="/login">
+            Sudah punya account? Login
+          </Link>
         </form>
       </CardContent>
     </Card>

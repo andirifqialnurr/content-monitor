@@ -3,6 +3,8 @@ import { z } from "zod";
 export const productTypeSchema = z.enum(["EBOOK", "COURSE"]);
 export const productStatusSchema = z.enum(["DRAFT", "ACTIVE", "INACTIVE"]);
 
+const productEntityIdSchema = z.string().trim().min(1).max(128);
+
 const optionalTextSchema = z
   .string()
   .trim()
@@ -75,7 +77,7 @@ export const listProductsInputSchema = z.object({
 });
 
 export const getProductInputSchema = z.object({
-  id: z.string().cuid(),
+  id: productEntityIdSchema,
 });
 
 export const createProductInputSchema = z.object({
@@ -91,7 +93,7 @@ export const createProductInputSchema = z.object({
 });
 
 export const updateProductInputSchema = z.object({
-  id: z.string().cuid(),
+  id: productEntityIdSchema,
   title: z.string().trim().min(2).max(160).optional(),
   slug: optionalSlugSchema,
   description: nullableTextSchema,
@@ -103,7 +105,7 @@ export const updateProductInputSchema = z.object({
 });
 
 export const deleteProductInputSchema = z.object({
-  id: z.string().cuid(),
+  id: productEntityIdSchema,
 });
 
 export type ListProductsInput = z.infer<typeof listProductsInputSchema>;

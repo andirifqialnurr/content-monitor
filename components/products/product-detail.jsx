@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, BookOpen, Download, ExternalLink, Eye, FileText, Save, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CourseBuilder } from "@/components/courses/course-builder";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,24 +47,6 @@ export function ProductDetail({ productId, expectedType }) {
     await utils.products.list.invalidate();
   }
 
-  function handleUpdate(event) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const submittedFileUrl = String(formData.get("fileUrl") ?? "");
-
-    updateMutation.mutate({
-      id: data.id,
-      title: String(formData.get("title") ?? ""),
-      slug: String(formData.get("slug") ?? ""),
-      description: String(formData.get("description") ?? ""),
-      price: Number(formData.get("price") ?? 0),
-      currency: String(formData.get("currency") ?? "IDR"),
-      coverUrl: String(formData.get("coverUrl") ?? ""),
-      fileUrl: hasPrivateFile && !submittedFileUrl ? data.fileUrl : submittedFileUrl,
-      status: String(formData.get("status") ?? "DRAFT"),
-    });
-  }
-
   return (
     <div className="grid gap-4">
       <div>
@@ -100,62 +82,7 @@ export function ProductDetail({ productId, expectedType }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form key={data.id} className="grid gap-3" onSubmit={handleUpdate}>
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
-                <Input name="title" defaultValue={data.title} placeholder="Nama produk" required />
-                <Input name="slug" defaultValue={data.slug} placeholder="slug-produk" required />
-              </div>
-              <textarea
-                name="description"
-                defaultValue={data.description ?? ""}
-                placeholder="Deskripsi produk"
-                className="min-h-32 rounded-md border border-input bg-background px-3 py-2 text-sm"
-              />
-              <div className="grid gap-3 md:grid-cols-[1fr_140px_140px]">
-                <Input name="price" min="0" step="1000" type="number" defaultValue={data.price} placeholder="Harga" />
-                <Input name="currency" maxLength={3} defaultValue={data.currency} aria-label="Currency" />
-                <select
-                  name="status"
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                  defaultValue={data.status}
-                >
-                  {statusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Input name="coverUrl" defaultValue={data.coverUrl ?? ""} placeholder="Cover image URL atau path internal" />
-              <Input
-                name="fileUrl"
-                defaultValue={hasPrivateFile ? "" : data.fileUrl ?? ""}
-                placeholder={data.type === "EBOOK" ? "URL file eksternal, atau upload PDF di panel kanan" : "File produk URL atau path internal"}
-              />
-              {hasPrivateFile && (
-                <p className="text-xs text-muted-foreground">
-                  File e-book tersimpan di private storage. Kosongkan field ini saat menyimpan metadata agar file tetap dipakai.
-                </p>
-              )}
-              <div className="flex flex-wrap items-center gap-2">
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  <Save className="size-4" />
-                  Simpan
-                </Button>
-                <Badge variant="secondary">{formatPrice(data.price, data.currency)}</Badge>
-                <Badge variant="outline">{data._count.orders} order</Badge>
-                {data.type === "COURSE" && <Badge variant="outline">{data._count.modules} module</Badge>}
-                {data.type === "COURSE" && (
-                  <Button asChild variant="outline">
-                    <Link href={`/produk/course/${data.id}/preview`}>
-                      <Eye className="size-4" />
-                      Preview course
-                    </Link>
-                  </Button>
-                )}
-              </div>
-              {updateMutation.error && <p className="text-sm text-destructive">{updateMutation.error.message}</p>}
-            </form>
+            <ProductMetadataForm data={data} hasPrivateFile={hasPrivateFile} updateMutation={updateMutation} />
           </CardContent>
         </Card>
 
@@ -211,6 +138,143 @@ function ProductPreview({ product, onFileUploaded }) {
       </CardContent>
     </Card>
   );
+}
+
+function ProductMetadataForm({ data, hasPrivateFile, updateMutation }) {
+  const [form, setForm] = useState(() => productToFormState(data, hasPrivateFile));
+
+  useEffect(() => {
+    setForm(productToFormState(data, hasPrivateFile));
+  }, [data.id, data.updatedAt, hasPrivateFile, data]);
+
+  function updateField(name, value) {
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  }
+
+  function handleUpdate(event) {
+    event.preventDefault();
+
+    updateMutation.mutate({
+      id: data.id,
+      title: form.title,
+      slug: form.slug,
+      description: form.description,
+      price: Number(form.price || 0),
+      currency: form.currency,
+      coverUrl: form.coverUrl,
+      fileUrl: hasPrivateFile && !form.fileUrl ? data.fileUrl : form.fileUrl,
+      status: form.status,
+    });
+  }
+
+  return (
+    <form key={data.id} className="grid gap-3" onSubmit={handleUpdate}>
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+        <Input
+          name="title"
+          value={form.title}
+          onChange={(event) => updateField("title", event.target.value)}
+          placeholder="Nama produk"
+          required
+        />
+        <Input
+          name="slug"
+          value={form.slug}
+          onChange={(event) => updateField("slug", event.target.value)}
+          placeholder="slug-produk"
+          required
+        />
+      </div>
+      <textarea
+        name="description"
+        value={form.description}
+        onChange={(event) => updateField("description", event.target.value)}
+        placeholder="Deskripsi produk"
+        className="min-h-32 rounded-md border border-input bg-background px-3 py-2 text-sm"
+      />
+      <div className="grid gap-3 md:grid-cols-[1fr_140px_140px]">
+        <Input
+          name="price"
+          min="0"
+          step="1000"
+          type="number"
+          value={form.price}
+          onChange={(event) => updateField("price", event.target.value)}
+          placeholder="Harga"
+        />
+        <Input
+          name="currency"
+          maxLength={3}
+          value={form.currency}
+          onChange={(event) => updateField("currency", event.target.value)}
+          aria-label="Currency"
+        />
+        <select
+          name="status"
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          value={form.status}
+          onChange={(event) => updateField("status", event.target.value)}
+        >
+          {statusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <Input
+        name="coverUrl"
+        value={form.coverUrl}
+        onChange={(event) => updateField("coverUrl", event.target.value)}
+        placeholder="Cover image URL atau path internal"
+      />
+      <Input
+        name="fileUrl"
+        value={form.fileUrl}
+        onChange={(event) => updateField("fileUrl", event.target.value)}
+        placeholder={data.type === "EBOOK" ? "URL file eksternal, atau upload PDF di panel kanan" : "File produk URL atau path internal"}
+      />
+      {hasPrivateFile && (
+        <p className="text-xs text-muted-foreground">
+          File e-book tersimpan di private storage. Kosongkan field ini saat menyimpan metadata agar file tetap dipakai.
+        </p>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="submit" disabled={updateMutation.isPending}>
+          <Save className="size-4" />
+          Simpan
+        </Button>
+        <Badge variant="secondary">{formatPrice(data.price, data.currency)}</Badge>
+        <Badge variant="outline">{data._count.orders} order</Badge>
+        {data.type === "COURSE" && <Badge variant="outline">{data._count.modules} module</Badge>}
+        {data.type === "COURSE" && (
+          <Button asChild variant="outline">
+            <Link href={`/produk/course/${data.id}/preview`}>
+              <Eye className="size-4" />
+              Preview course
+            </Link>
+          </Button>
+        )}
+      </div>
+      {updateMutation.error && <p className="text-sm text-destructive">{updateMutation.error.message}</p>}
+    </form>
+  );
+}
+
+function productToFormState(product, hasPrivateFile) {
+  return {
+    title: product.title,
+    slug: product.slug,
+    description: product.description ?? "",
+    price: String(product.price),
+    currency: product.currency,
+    coverUrl: product.coverUrl ?? "",
+    fileUrl: hasPrivateFile ? "" : product.fileUrl ?? "",
+    status: product.status,
+  };
 }
 
 function EBookUpload({ productId, onUploaded }) {

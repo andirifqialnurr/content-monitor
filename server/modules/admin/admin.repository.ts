@@ -144,6 +144,13 @@ export function listRecentAdminOrders(prisma: PrismaClient, limit = 20, filters:
       transactions: {
         orderBy: { createdAt: "desc" },
         take: 1,
+        select: {
+          id: true,
+          provider: true,
+          providerReference: true,
+          status: true,
+          createdAt: true,
+        },
       },
     },
   });
@@ -171,9 +178,21 @@ export function listRecentAdminPayments(prisma: PrismaClient, limit = 20, filter
     where,
     orderBy: { createdAt: "desc" },
     take: limit,
-    include: {
+    select: {
+      id: true,
+      orderId: true,
+      provider: true,
+      providerReference: true,
+      status: true,
+      createdAt: true,
       order: {
-        include: {
+        select: {
+          id: true,
+          status: true,
+          amount: true,
+          currency: true,
+          buyerEmail: true,
+          buyerName: true,
           buyer: {
             select: {
               id: true,

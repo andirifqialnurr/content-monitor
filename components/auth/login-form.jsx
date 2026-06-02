@@ -1,6 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,14 @@ export function LoginForm() {
           <Button type="submit" disabled={loading}>
             {loading ? "Memproses..." : "Login"}
           </Button>
+          <div className="flex flex-wrap justify-between gap-3 text-sm text-muted-foreground">
+            <Link className="underline-offset-4 hover:text-foreground hover:underline" href="/forgot-password">
+              Lupa password?
+            </Link>
+            <Link className="underline-offset-4 hover:text-foreground hover:underline" href="/register">
+              Buat account
+            </Link>
+          </div>
         </form>
       </CardContent>
     </Card>

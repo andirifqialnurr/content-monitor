@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const appearanceBlockTypeSchema = z.enum(["LINK", "PRODUCT", "CONTENT", "CTA"]);
 
+const appearanceEntityIdSchema = z.string().trim().min(1).max(128);
+
 const nullableTextSchema = z
   .string()
   .trim()
@@ -57,30 +59,30 @@ export const createAppearanceBlockInputSchema = z
     type: appearanceBlockTypeSchema,
     title: z.string().trim().min(2).max(160),
     url: optionalUrlSchema,
-    productId: z.string().cuid().optional(),
-    contentItemId: z.string().cuid().optional(),
+    productId: appearanceEntityIdSchema.optional(),
+    contentItemId: appearanceEntityIdSchema.optional(),
     isVisible: z.boolean().default(true),
   })
   .superRefine(validateBlockTarget);
 
 export const updateAppearanceBlockInputSchema = z
   .object({
-    id: z.string().cuid(),
+    id: appearanceEntityIdSchema,
     type: appearanceBlockTypeSchema.optional(),
     title: z.string().trim().min(2).max(160).optional(),
     url: optionalUrlSchema,
-    productId: z.string().cuid().nullable().optional(),
-    contentItemId: z.string().cuid().nullable().optional(),
+    productId: appearanceEntityIdSchema.nullable().optional(),
+    contentItemId: appearanceEntityIdSchema.nullable().optional(),
     isVisible: z.boolean().optional(),
   })
   .superRefine(validateBlockTarget);
 
 export const deleteAppearanceBlockInputSchema = z.object({
-  id: z.string().cuid(),
+  id: appearanceEntityIdSchema,
 });
 
 export const moveAppearanceBlockInputSchema = z.object({
-  id: z.string().cuid(),
+  id: appearanceEntityIdSchema,
   direction: z.enum(["UP", "DOWN"]),
 });
 

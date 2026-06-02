@@ -3,6 +3,8 @@ import { z } from "zod";
 export const contentTypeSchema = z.enum(["VIDEO_SHORT", "CAROUSEL_POST", "BLOG", "LONG_VIDEO"]);
 export const contentStatusSchema = z.enum(["DRAFT", "SCHEDULED", "PUBLISHED", "ARCHIVED"]);
 
+const contentEntityIdSchema = z.string().trim().min(1).max(128);
+
 const optionalTextSchema = z
   .string()
   .trim()
@@ -54,7 +56,7 @@ export const createContentItemInputSchema = z
 
 export const updateContentItemInputSchema = z
   .object({
-    id: z.string().cuid(),
+    id: contentEntityIdSchema,
     type: contentTypeSchema.optional(),
     title: z.string().trim().min(2).max(160).optional(),
     body: optionalTextSchema,
@@ -72,7 +74,7 @@ export const updateContentItemInputSchema = z
   });
 
 export const deleteContentItemInputSchema = z.object({
-  id: z.string().cuid(),
+  id: contentEntityIdSchema,
 });
 
 export type ListContentItemsInput = z.infer<typeof listContentItemsInputSchema>;

@@ -495,10 +495,24 @@ function BlockList({ blocks, products, contentItems, onMove, onDelete, onUpdate,
                       />
                       Tampil
                     </label>
-                    <Button type="button" variant="outline" size="icon" disabled={isPending} onClick={() => setEditingBlockId(block.id)}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={isPending}
+                      aria-label={`Edit ${block.title}`}
+                      onClick={() => setEditingBlockId(block.id)}
+                    >
                       <Pencil className="size-4" />
                     </Button>
-                    <Button type="button" variant="outline" size="icon" disabled={isPending || index === 0} onClick={() => onMove(block.id, "UP")}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={isPending || index === 0}
+                      aria-label={`Pindah naik ${block.title}`}
+                      onClick={() => onMove(block.id, "UP")}
+                    >
                       <ArrowUp className="size-4" />
                     </Button>
                     <Button
@@ -506,11 +520,19 @@ function BlockList({ blocks, products, contentItems, onMove, onDelete, onUpdate,
                       variant="outline"
                       size="icon"
                       disabled={isPending || index === blocks.length - 1}
+                      aria-label={`Pindah turun ${block.title}`}
                       onClick={() => onMove(block.id, "DOWN")}
                     >
                       <ArrowDown className="size-4" />
                     </Button>
-                    <Button type="button" variant="outline" size="icon" disabled={isPending} onClick={() => onDelete(block.id)}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={isPending}
+                      aria-label={`Hapus ${block.title}`}
+                      onClick={() => onDelete(block.id)}
+                    >
                       <Trash2 className="size-4" />
                     </Button>
                   </div>
