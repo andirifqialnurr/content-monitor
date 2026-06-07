@@ -1,0 +1,104 @@
+"use client";
+
+import { getSession, signIn } from "next-auth/react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+
+export function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedCallbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl = requestedCallbackUrl ?? "/events";
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const formData = new FormData(event.currentTarget);
+    const result = await signIn("credentials", {
+      email: formData.get("email"),
+      password: formData.get("password"),
+      redirect: false,
+      callbackUrl,
+    });
+
+    setLoading(false);
+
+    if (result?.error) {
+      setError("Email atau password tidak valid.");
+      return;
+    }
+
+    const session = await getSession();
+    router.push(resolvePostLoginUrl(session, requestedCallbackUrl));
+    router.refresh();
+  }
+
+  return (
+    <Card className="mx-auto w-full max-w-md">
+      <CardHeader>
+        <CardDescription>Auth</CardDescription>
+        <CardTitle>Login</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form className="grid gap-4" onSubmit={handleSubmit}>
+          <Input name="email" type="email" placeholder="Email" autoComplete="email" required />
+          <Input name="password" type="password" placeholder="Password" autoComplete="current-password" required />
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <Button type="submit" disabled={loading}>
+            {loading ? "Memproses..." : "Login"}
+          </Button>
+          <div className="flex flex-wrap justify-between gap-3 text-sm text-muted-foreground">
+            <Link className="underline-offset-4 hover:text-foreground hover:underline" href="/forgot-password">
+              Lupa password?
+            </Link>
+            <Link className="underline-offset-4 hover:text-foreground hover:underline" href="/register">
+              Buat account
+            </Link>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function resolvePostLoginUrl(session, requestedCallbackUrl) {
+  const requestedPath = toInternalPath(requestedCallbackUrl);
+
+  if (session?.user?.role === "ADMIN") {
+    return requestedPath ?? "/admin";
+  }
+
+  if (requestedPath && !requestedPath.startsWith("/admin")) {
+    return requestedPath;
+  }
+
+  return "/events";
+}
+
+function toInternalPath(value) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(value, window.location.origin);
+
+    if (parsed.origin !== window.location.origin) {
+      return null;
+    }
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
+  }
+}

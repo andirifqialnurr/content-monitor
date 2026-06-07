@@ -46,3 +46,83 @@
       sans-serif;
   }
 }
+
+@layer components {
+  .events-calendar-shell .fc {
+    --fc-border-color: hsl(var(--border));
+    --fc-button-bg-color: hsl(var(--primary));
+    --fc-button-border-color: hsl(var(--primary));
+    --fc-button-hover-bg-color: hsl(var(--primary) / 0.9);
+    --fc-button-hover-border-color: hsl(var(--primary) / 0.9);
+    --fc-event-border-color: transparent;
+    --fc-event-bg-color: hsl(var(--primary));
+    --fc-event-text-color: hsl(var(--primary-foreground));
+    --fc-page-bg-color: transparent;
+    color: hsl(var(--foreground));
+    font-family: inherit;
+  }
+
+  .events-calendar-shell .fc-theme-standard td,
+  .events-calendar-shell .fc-theme-standard th,
+  .events-calendar-shell .fc-scrollgrid {
+    border-color: hsl(var(--border));
+  }
+
+  .events-calendar-shell .fc-col-header-cell,
+  .events-calendar-shell .fc-timegrid-axis,
+  .events-calendar-shell .fc-list-day-cushion {
+    background: hsl(var(--muted) / 0.45);
+  }
+
+  .events-calendar-shell .fc-daygrid-day-number,
+  .events-calendar-shell .fc-col-header-cell-cushion,
+  .events-calendar-shell .fc-list-day-text,
+  .events-calendar-shell .fc-list-day-side-text {
+    color: hsl(var(--foreground));
+    text-decoration: none;
+  }
+
+  .events-calendar-shell .fc-event {
+    border-radius: calc(var(--radius) - 2px);
+    cursor: pointer;
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+    padding: 1px 3px;
+  }
+
+  .events-calendar-shell .fc-event.event-type-video-short {
+    background: #0ea5e9;
+  }
+
+  .events-calendar-shell .fc-event.event-type-carousel-post {
+    background: #059669;
+  }
+
+  .events-calendar-shell .fc-event.event-type-blog {
+    background: #d97706;
+  }
+
+  .events-calendar-shell .fc-event.event-type-long-video {
+    background: #e11d48;
+  }
+
+  .events-calendar-shell .fc-list-event-dot {
+    border-color: hsl(var(--primary));
+  }
+
+  .events-calendar-shell .fc-list-event.event-type-video-short .fc-list-event-dot {
+    border-color: #0ea5e9;
+  }
+
+  .events-calendar-shell .fc-list-event.event-type-carousel-post .fc-list-event-dot {
+    border-color: #059669;
+  }
+
+  .events-calendar-shell .fc-list-event.event-type-blog .fc-list-event-dot {
+    border-color: #d97706;
+  }
+
+  .events-calendar-shell .fc-list-event.event-type-long-video .fc-list-event-dot {
+    border-color: #e11d48;
+  }
+}
