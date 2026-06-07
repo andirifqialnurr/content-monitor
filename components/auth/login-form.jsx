@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/events";
+  const requestedCallbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl = requestedCallbackUrl ?? "/events";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +36,8 @@ export function LoginForm() {
       return;
     }
 
-    router.push(result?.url ?? callbackUrl);
+    const session = await getSession();
+    router.push(resolvePostLoginUrl(session, requestedCallbackUrl));
     router.refresh();
   }
 
@@ -67,4 +69,36 @@ export function LoginForm() {
       </CardContent>
     </Card>
   );
+}
+
+function resolvePostLoginUrl(session, requestedCallbackUrl) {
+  const requestedPath = toInternalPath(requestedCallbackUrl);
+
+  if (session?.user?.role === "ADMIN") {
+    return requestedPath ?? "/admin";
+  }
+
+  if (requestedPath && !requestedPath.startsWith("/admin")) {
+    return requestedPath;
+  }
+
+  return "/events";
+}
+
+function toInternalPath(value) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(value, window.location.origin);
+
+    if (parsed.origin !== window.location.origin) {
+      return null;
+    }
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
+  }
 }

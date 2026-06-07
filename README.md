@@ -87,7 +87,13 @@ npm run db:setup
 npm run db:studio
 ```
 
-Seed membuat admin awal dari env dan data demo sebagai `ContentItem` draft.
+Seed membuat 3 akun demo utama:
+
+- `admin@content-monitor.local` / `AdminPassword123!`
+- `user1@content-monitor.local` / `UserPassword123!`
+- `user2@content-monitor.local` / `UserPassword123!`
+
+Seed juga membuat data demo sebagai `ContentItem` draft.
 
 Seed juga membuat data QA end-to-end untuk semua modul:
 
@@ -104,6 +110,7 @@ Skenario lengkapnya ada di [docs/qa-scenarios.md](docs/qa-scenarios.md).
 - `/bank-konten/*`: CRUD konten berdasarkan format.
 - `/produk/e-book`: produk e-book, upload PDF private, preview, dan download setelah paid.
 - `/produk/course`: course builder, module, lesson, resource, quiz, dan preview creator.
+- `/marketplace`: katalog produk aktif milik pengguna lain untuk preview dan checkout.
 - `/appearance`: builder halaman publik `/{username}`.
 - `/statistics`: statistik user untuk view, click, checkout, revenue, course progress, dan quiz.
 - `/payment`: dashboard order penjualan/pembelian dan status payment user.

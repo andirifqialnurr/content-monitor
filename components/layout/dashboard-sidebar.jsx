@@ -12,10 +12,12 @@ import {
   MonitorCheck,
   Newspaper,
   Palette,
+  ShoppingBag,
   Settings,
   UserCircle,
   Video,
 } from "lucide-react";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 
@@ -45,6 +47,7 @@ const dashboardSections = [
   {
     label: "Platform",
     items: [
+      { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
       { href: "/appearance", label: "Appearance", icon: Palette },
       { href: "/statistics", label: "Statistics", icon: BarChart3 },
       { href: "/payment", label: "Payment", icon: CreditCard },
@@ -53,7 +56,12 @@ const dashboardSections = [
   },
 ];
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ user }) {
+  const accessItems = [
+    { href: "/learn", label: "Learner Area", icon: BookOpen },
+    ...(user?.role === "ADMIN" ? [{ href: "/admin/users", label: "Admin", icon: Settings }] : []),
+  ];
+
   return (
     <aside className="border-r bg-card p-5">
       <div className="flex items-center gap-3">
@@ -74,13 +82,13 @@ export function DashboardSidebar() {
         sections={[
           {
             label: "Akses",
-            items: [
-              { href: "/learn", label: "Learner Area", icon: BookOpen },
-              { href: "/admin/users", label: "Admin", icon: Settings },
-            ],
+            items: accessItems,
           },
         ]}
       />
+
+      <Separator className="my-5" />
+      <LogoutButton className="w-full justify-start" />
     </aside>
   );
 }

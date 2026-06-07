@@ -35,6 +35,8 @@ async function main() {
         name: adminName,
         role: "ADMIN",
         username: adminUsername,
+        status: "ACTIVE",
+        passwordHash: hashPassword(adminPassword),
       },
       create: {
         name: adminName,
@@ -44,6 +46,8 @@ async function main() {
         passwordHash: hashPassword(adminPassword),
       },
     });
+
+    await seedDemoUsers(tx, hashPassword);
 
     await tx.contentItem.deleteMany({
       where: {
@@ -64,6 +68,47 @@ async function main() {
       hashPassword,
     });
   });
+}
+
+async function seedDemoUsers(tx, hashPassword) {
+  const demoUsers = [
+    {
+      id: "demo-user-pengguna-1",
+      name: "Demo Pengguna 1",
+      email: "user1@content-monitor.local",
+      username: "pengguna-demo-1",
+      password: "UserPassword123!",
+    },
+    {
+      id: "demo-user-pengguna-2",
+      name: "Demo Pengguna 2",
+      email: "user2@content-monitor.local",
+      username: "pengguna-demo-2",
+      password: "UserPassword123!",
+    },
+  ];
+
+  for (const user of demoUsers) {
+    await tx.user.upsert({
+      where: { email: user.email },
+      update: {
+        name: user.name,
+        username: user.username,
+        role: "USER",
+        status: "ACTIVE",
+        passwordHash: hashPassword(user.password),
+      },
+      create: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        role: "USER",
+        status: "ACTIVE",
+        passwordHash: hashPassword(user.password),
+      },
+    });
+  }
 }
 
 function buildLegacyContentItems(userId) {
@@ -143,7 +188,9 @@ function normalizeSlug(value) {
 main()
   .then(async () => {
     console.log("Seeded content monitor data.");
-    console.log("Admin login:", process.env.ADMIN_EMAIL ?? "admin@content-monitor.local");
+    console.log("Demo admin login:", process.env.ADMIN_EMAIL ?? "admin@content-monitor.local", "/", process.env.ADMIN_PASSWORD ?? "AdminPassword123!");
+    console.log("Demo user 1 login: user1@content-monitor.local / UserPassword123!");
+    console.log("Demo user 2 login: user2@content-monitor.local / UserPassword123!");
     console.log("QA creator login: creator@content-monitor.local / CreatorPassword123!");
     console.log("QA buyer login: buyer@content-monitor.local / BuyerPassword123!");
     console.log("QA partner login: partner@content-monitor.local / PartnerPassword123!");

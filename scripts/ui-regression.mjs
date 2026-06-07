@@ -119,6 +119,9 @@ async function authAccountAndPublicRoutes() {
     await page.getByRole("button", { name: "Ganti password" }).click();
     await expectText(page, "Password diperbarui.", "password restored feedback");
 
+    await goto(page, "/admin");
+    await expectUrlContains(page, "/events", "user denied admin dashboard");
+
     await assertNoUiErrors(tracker);
   });
 
@@ -214,6 +217,14 @@ async function creatorCommerceLearnerAndAnalytics() {
   });
 
   await withLoggedInPage("buyer", users.buyer, async (page, tracker) => {
+    await goto(page, "/marketplace");
+    await expectText(page, "Marketplace Produk", "marketplace dashboard");
+    await expectText(page, "Creator Launch Playbook", "marketplace creator product");
+    const marketplaceProduct = page.locator("article").filter({ hasText: "Creator Launch Playbook" }).first();
+    await marketplaceProduct.getByRole("link", { name: "Preview" }).click();
+    await expectUrlContains(page, "/creator-demo/product/creator-launch-playbook", "marketplace product preview");
+    await expectText(page, "Beli e-book", "marketplace preview checkout CTA");
+
     await goto(page, "/learn");
     await expectText(page, "My Courses", "learner dashboard");
     await expectText(page, "Content System Course", "buyer course enrollment");
@@ -234,8 +245,12 @@ async function creatorCommerceLearnerAndAnalytics() {
 
 async function adminArea() {
   await withLoggedInPage("admin", users.admin, async (page, tracker) => {
-    await goto(page, "/admin");
     await expectText(page, "Platform Overview", "admin overview");
+    await goto(page, "/events");
+    await expectText(page, "Events", "admin can access user dashboard");
+
+    await goto(page, "/admin");
+    await expectText(page, "Platform Overview", "admin overview after user dashboard");
 
     await goto(page, "/admin/users");
     await expectText(page, "Users", "admin users");
@@ -617,7 +632,7 @@ async function runPhase(name, callback) {
 
 async function withLoggedInPage(label, credentials, callback) {
   await withTrackedPage(label, async (page, tracker) => {
-    await loginViaUi(page, credentials);
+    await loginViaUi(page, credentials, label === "admin" ? "Platform Overview" : "Events");
     await callback(page, tracker);
   });
 }
@@ -638,13 +653,13 @@ async function withTrackedPage(label, callback) {
   }
 }
 
-async function loginViaUi(page, credentials) {
+async function loginViaUi(page, credentials, expectedLandingText) {
   await goto(page, "/login");
   await page.getByPlaceholder("Email").fill(credentials.email);
   await page.getByPlaceholder("Password").fill(credentials.password);
   await page.getByRole("button", { name: "Login" }).click();
   await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 15000 });
-  await expectText(page, "Events", `login ${credentials.email}`);
+  await expectText(page, expectedLandingText, `login ${credentials.email}`);
 }
 
 async function goto(page, path) {

@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 
@@ -58,6 +59,9 @@ export function AdminSidebar() {
           },
         ]}
       />
+
+      <Separator className="my-5" />
+      <LogoutButton className="w-full justify-start" />
     </aside>
   );
 }
